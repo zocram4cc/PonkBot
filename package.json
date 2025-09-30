@@ -34,7 +34,7 @@
     "cookie-parser":        "latest",
     "express":              "latest",
     "express-session":      "latest",
-    "google-translate-api": "vitalets/google-translate-api",
+    "google-translate-api": "latest",
     "jstransformer-marked": "latest",
     "knex":                 "latest",
     "limiter":              "1.1.5",

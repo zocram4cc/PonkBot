@@ -1,0 +1,19 @@
+doctype html
+html(lang='en')
+    include mixins
+
+    head
+        title Betting
+        +favicon()
+        +bootstrap_css()
+        link( href='/css/betting.css', rel='stylesheet' )
+body
+  .container
+    h1 Betting
+    #betting-info
+      p Loading...
+    h2 Bets
+    #betting-table
+      p Loading...
+
+  script( type='text/javascript', src='/js/betting.js')

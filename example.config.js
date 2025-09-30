@@ -25,9 +25,18 @@ module.exports = {
         pass : 'DeleteThisLineIfYouChannelHasNoPassword',
     },
     db: {
-        client     : 'sqlite3',
-        connection : { filename: 'ponkbot.db' },
+        client: 'sqlite3',
+        connection: {
+            filename: './ponkbot.db'
+        },
+        useNullAsDefault: true
     },
+
+    betting: {
+        defaultBankroll: 1000,
+    },
+
+    // PonkBot specific settings
     webhost: {
         secret   : 'JustRandomlySmashYourKeyboard',
         weblink  : 'http://mycheap.vps',

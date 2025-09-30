@@ -1,0 +1,21 @@
+
+/* www/css/betting.css */
+
+#betting-info {
+  margin-bottom: 20px;
+}
+
+#betting-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+#betting-table th, #betting-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  text-align: left;
+}
+
+#betting-table th {
+  background-color: #f2f2f2;
+}
