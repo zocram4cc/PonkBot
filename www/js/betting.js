@@ -1,4 +1,3 @@
-
 // www/js/betting.js
 
 function updateBettingInfo() {
@@ -47,5 +46,42 @@ function updateBettingInfo() {
     });
 }
 
+function updateLedger() {
+  fetch('/api/ledger')
+    .then(res => res.json())
+    .then(ledger => {
+      const tableDiv = document.getElementById('ledger-table');
+      const users = Object.keys(ledger);
+      if (users.length === 0) {
+        tableDiv.innerHTML = '<p>Ledger is empty.</p>';
+        return;
+      }
+
+      const table = `
+        <table>
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>Bucks</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${users.map(user => `
+              <tr>
+                <td>${user}</td>
+                <td>${ledger[user]}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
+      tableDiv.innerHTML = table;
+    });
+}
+
 updateBettingInfo();
-setInterval(updateBettingInfo, 5000);
+updateLedger();
+setInterval(() => {
+  updateBettingInfo();
+  updateLedger();
+}, 5000);

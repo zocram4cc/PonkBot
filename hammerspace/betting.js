@@ -101,7 +101,7 @@ class Betting {
 
     this.updateBalance(lowerUser, -amount);
     this.currentRound.bets.push({ user, team, amount });
-    return { success: true, message: `Bet placed on ${team} for ${amount}.` };
+    return { success: true, message: `Bet placed on ${team} for ${amount} by ${user}.` };
   }
 
   async resolveRound(winner) {
@@ -145,7 +145,11 @@ class Betting {
   }
   
   getLedger() {
-    return this.ledger;
+    return Object.fromEntries(
+      Object.entries(this.ledger)
+        .map(([user, balance]) => [user, Math.trunc(balance)])
+        .sort(([, a], [, b]) => b - a)
+    );
   }
 
   getCurrentBets() {
@@ -172,12 +176,34 @@ module.exports = {
     ponk.betting = new Betting(ponk);
     ponk.commands.handlers.bet = function(user, params, { command, message, rank }) {
         const [team, amountStr] = params.split(' ');
-        const amount = parseInt(amountStr, 10);
+        let amount;
+        if (amountStr.toLowerCase() === 'all') {
+          amount = ponk.betting.getBalance(user);
+        } else {
+          amount = parseInt(amountStr, 10);
+        }
         if (!team || isNaN(amount) || amount <= 0) {
             return ponk.sendMessage('Usage: !bet <team> <amount>');
         }
         const result = ponk.betting.placeBet(user, team, amount);
-        ponk.sendMessage(result.message);
+        ponk.sendPrivate(result.message, user);
+    }.bind(ponk);
+    ponk.commands.handlers.bucks = function(user, params, { command, message, rank }) {
+      const balance = ponk.betting.getBalance(user);
+      ponk.sendPrivate(`You have ${balance} bucks.`, user);
+    }.bind(ponk);
+    ponk.commands.handlers.addbucks = function(user, params, { command, message, rank }) {
+      this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
+        const [targetUser, amountStr] = params.split(' ');
+        const amount = parseInt(amountStr, 10);
+        if (!targetUser || isNaN(amount)) {
+          return this.sendMessage('Usage: !addbucks <user> <amount>');
+        }
+        this.betting.updateBalance(targetUser, amount);
+        this.sendMessage(`${amount} bucks added to ${targetUser}.`);
+      }).catch((err) => {
+        this.sendPrivate(err, user);
+      });
     }.bind(ponk);
   }
 };
