@@ -16,6 +16,45 @@ class Betting {
     };
 
     this.loadLedger();
+    this.loadCurrentRound();
+    this.refundOpenBet();
+  }
+
+  async refundOpenBet() {
+    console.log('Checking for open bet to refund...');
+    console.log('this.currentRound.open:', this.currentRound.open);
+    console.log('this.currentRound.bets.length:', this.currentRound.bets.length);
+    if (this.currentRound.open && this.currentRound.bets.length > 0) {
+      console.warn('Bot restarted with an open bet. Refunding all placed bets.');
+      this.ponk.sendMessage('Bot restarted with an open bet. Refunding all placed bets.');
+      for (const bet of this.currentRound.bets) {
+        this.updateBalance(bet.user, bet.amount);
+        this.ponk.sendPrivate(`${bet.user}, your bet of ${bet.amount} has been refunded.`, bet.user);
+      }
+      this.currentRound = { teamA: null, teamB: null, bets: [], open: false };
+      await this.saveCurrentRound();
+      this.saveLedger();
+    }
+  }
+
+  async loadCurrentRound() {
+    try {
+      const data = await this.db.getKeyValue('betting_current_round');
+      if (data) {
+        this.currentRound = JSON.parse(data);
+        console.info('Current betting round loaded.', this.currentRound);
+      } else {
+        console.info('No current betting round data found in DB.');
+      }
+    } catch (err) {
+      console.error('Error loading current betting round, starting fresh.', err);
+      this.currentRound = {
+        teamA: null,
+        teamB: null,
+        bets: [],
+        open: false,
+      };
+    }
   }
 
   async loadLedger() {
@@ -36,6 +75,14 @@ class Betting {
       await this.db.setKeyValue('betting_ledger', JSON.stringify(this.ledger, null, 2));
     } catch (err) {
       console.error('Error saving ledger.', err);
+    }
+  }
+
+  async saveCurrentRound() {
+    try {
+      await this.db.setKeyValue('betting_current_round', JSON.stringify(this.currentRound, null, 2));
+    } catch (err) {
+      console.error('Error saving current betting round.', err);
     }
   }
 
@@ -60,6 +107,7 @@ class Betting {
       bets: [],
       open: true,
     };
+    await this.saveCurrentRound();
     // let teamA_odds = await this.db.getTeam(teamA);
     // let teamB_odds = await this.db.getTeam(teamB);
     // if (teamA_odds === undefined) {
@@ -74,16 +122,17 @@ class Betting {
     return this.currentRound;
   }
 
-  closeBetting() {
+  async closeBetting() {
     if (!this.currentRound.open) {
       return { success: false, message: 'Betting is already closed.' };
     }
     this.currentRound.open = false;
+    await this.saveCurrentRound();
     this.ponk.sendMessage('Betting is now closed!');
     return { success: true, message: 'Betting closed.' };
   }
 
-  placeBet(user, team, amount) {
+  async placeBet(user, team, amount) {
     const lowerUser = user.toLowerCase();
     if (!this.currentRound.open) {
       return { success: false, message: 'Betting is closed.' };
@@ -101,6 +150,7 @@ class Betting {
 
     this.updateBalance(lowerUser, -amount);
     this.currentRound.bets.push({ user, team, amount });
+    await this.saveCurrentRound();
     return { success: true, message: `Bet placed on ${team} for ${amount} by ${user}.` };
   }
 
@@ -137,6 +187,7 @@ class Betting {
 
     this.ponk.sendMessage(`The winner is ${winner}! Payouts complete.`);
     this.currentRound = { teamA: null, teamB: null, bets: [], open: false };
+    await this.saveCurrentRound();
     this.saveLedger();
     return {
         success: true,
@@ -177,13 +228,17 @@ module.exports = {
     ponk.commands.handlers.bet = function(user, params, { command, message, rank }) {
         const [team, amountStr] = params.split(' ');
         let amount;
-        if (amountStr.toLowerCase() === 'all') {
-          amount = ponk.betting.getBalance(user);
-        } else {
-          amount = parseInt(amountStr, 10);
-        }
-        if (!team || isNaN(amount) || amount <= 0) {
-            return ponk.sendMessage('Usage: !bet <team> <amount>');
+          try {
+            if (amountStr.toLowerCase() === 'all') {
+              amount = ponk.betting.getBalance(user);
+            } else {
+              amount = parseInt(amountStr, 10);
+            }
+            if (!team || isNaN(amount) || amount <= 0) {
+                return ponk.sendMessage('Usage: !bet <team> <amount>');
+            }
+          } catch (err) {
+            console.error('Some retard broke it.', err);
         }
         const result = ponk.betting.placeBet(user, team, amount);
         ponk.sendPrivate(result.message, user);
