@@ -1,5 +1,6 @@
-
-/* www/css/betting.css */
+* {
+  color-scheme: light dark;
+}
 
 #betting-info {
   margin-bottom: 20px;
@@ -17,5 +18,5 @@
 }
 
 #betting-table th {
-  background-color: #f2f2f2;
+  background-color: light-dark(#f2f2f2, #444);
 }
