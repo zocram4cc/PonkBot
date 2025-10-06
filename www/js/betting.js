@@ -8,16 +8,20 @@ function updateBettingInfo() {
     .then(res => res.json())
     .then(data => {
       const { round, totals } = data;
+      
       const infoDiv = document.getElementById('betting-info');
-      if (!round.open) {
-        infoDiv.innerHTML = '<p>Betting is closed.</p>';
+      let divText = `
+        <h3 class="text-center">Current match: <strong>${round.teamA}</strong> vs <strong>${round.teamB}</strong></h3>
+        <h4 class="text-center">Total on ${round.teamA}: ${localeNum.format(totals[round.teamA])}</h4>
+        <h4 class="text-center">Total on ${round.teamB}: ${localeNum.format(totals[round.teamB])}</h4>
+      `;
+      if (round.open) {
+        divText = divText.concat('<h4>Betting is <strong><span style="color: green">OPEN</span></strong>.</h4>');
       } else {
-        infoDiv.innerHTML = `
-          <p><strong>${round.teamA}</strong> vs <strong>${round.teamB}</strong></p>
-          <p>Total on ${round.teamA}: ${localeNum.format(totals[round.teamA])}</p>
-          <p>Total on ${round.teamB}: ${localeNum.format(totals[round.teamB])}</p>
-        `;
+        divText = divText.concat('<h4>Betting is <strong><span style="color: red">CLOSED</span></strong>.</h4>');
       }
+      infoDiv.innerHTML = divText;
+      
 
       const tableDiv = document.getElementById('betting-table');
       if (round.bets.length === 0) {
