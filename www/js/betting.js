@@ -36,7 +36,7 @@ function updateBettingInfo() {
               <tr>
                 <td>${bet.user}</td>
                 <td>${bet.team}</td>
-                <td>${bet.amount}</td>
+                <td class="text-end">${bet.amount}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -69,7 +69,7 @@ function updateLedger() {
             ${users.map(user => `
               <tr>
                 <td>${user}</td>
-                <td>${ledger[user]}</td>
+                <td class="text-end">${ledger[user]}</td>
               </tr>
             `).join('')}
           </tbody>
