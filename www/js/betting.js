@@ -1,5 +1,8 @@
 // www/js/betting.js
 
+const userLocale = navigator.languages[0];
+const localeNum = new Intl.NumberFormat(userLocale,"en");
+
 function updateBettingInfo() {
   fetch('/api/bets')
     .then(res => res.json())
@@ -11,8 +14,8 @@ function updateBettingInfo() {
       } else {
         infoDiv.innerHTML = `
           <p><strong>${round.teamA}</strong> vs <strong>${round.teamB}</strong></p>
-          <p>Total on ${round.teamA}: ${totals[round.teamA]}</p>
-          <p>Total on ${round.teamB}: ${totals[round.teamB]}</p>
+          <p>Total on ${round.teamA}: ${localeNum.format(totals[round.teamA])}</p>
+          <p>Total on ${round.teamB}: ${localeNum.format(totals[round.teamB])}</p>
         `;
       }
 
@@ -36,7 +39,7 @@ function updateBettingInfo() {
               <tr>
                 <td>${bet.user}</td>
                 <td>${bet.team}</td>
-                <td class="text-end">${bet.amount}</td>
+                <td class="text-end">${localeNum.format(bet.amount)}</td>
               </tr>
             `).join('')}
           </tbody>
@@ -69,7 +72,7 @@ function updateLedger() {
             ${users.map(user => `
               <tr>
                 <td>${user}</td>
-                <td class="text-end">${ledger[user]}</td>
+                <td class="text-end">${localeNum.format(ledger[user])}</td>
               </tr>
             `).join('')}
           </tbody>
