@@ -13,6 +13,7 @@ class Betting {
       teamB: null,
       bets: [],
       open: false,
+      bounty: 0,
     };
 
     this.loadLedger();
@@ -31,7 +32,7 @@ class Betting {
         this.updateBalance(bet.user, bet.amount);
         this.ponk.sendPrivate(`${bet.user}, your bet of ${bet.amount} has been refunded.`, bet.user);
       }
-      this.currentRound = { teamA: null, teamB: null, bets: [], open: false };
+      this.currentRound = { teamA: null, teamB: null, bets: [], open: false, bounty: 0 };
       await this.saveCurrentRound();
       this.saveLedger();
     }
@@ -42,6 +43,9 @@ class Betting {
       const data = await this.db.getKeyValue('betting_current_round');
       if (data) {
         this.currentRound = JSON.parse(data);
+        if (!this.currentRound.bounty) {
+          this.currentRound.bounty = 0;
+        }
         console.info('Current betting round loaded.', this.currentRound);
       } else {
         console.info('No current betting round data found in DB.');
@@ -53,6 +57,7 @@ class Betting {
         teamB: null,
         bets: [],
         open: false,
+        bounty: 0,
       };
     }
   }
@@ -92,7 +97,7 @@ class Betting {
 
   updateBalance(user, amount) {
     const lowerUser = user.toLowerCase();
-    if (!this.ledger[lowerUser]) {
+    if (!this.ledger.hasOwnProperty(lowerUser)) {
       this.ledger[lowerUser] = this.defaultBankroll;
     }
     this.ledger[lowerUser] += amount;
@@ -106,6 +111,7 @@ class Betting {
       teamB,
       bets: [],
       open: true,
+      bounty: this.currentRound.bounty || 0,
     };
     await this.saveCurrentRound();
     // let teamA_odds = await this.db.getTeam(teamA);
@@ -118,7 +124,11 @@ class Betting {
     //     await this.db.insertTeam(teamB);
     //     teamB_odds = 1.5;
     // }
-    this.ponk.sendMessage(`Betting is open! Today's match: ${teamA} vs ${teamB}. Use !bet <team> <amount> to place your bet.`);
+    let message = `Betting is open! Today\'s match: ${teamA} vs ${teamB}. Use !bet <team> <amount> to place your bet.`;
+    if (this.currentRound.bounty > 0) {
+      message += ` The pot starts with a bounty of ${this.currentRound.bounty}!`;
+    }
+    this.ponk.sendMessage(message);
     return this.currentRound;
   }
 
@@ -169,14 +179,25 @@ class Betting {
 
     const totalWinningPool = winningBets.reduce((sum, bet) => sum + bet.amount, 0);
     const totalLosingPool = losingBets.reduce((sum, bet) => sum + bet.amount, 0);
+    const bounty = this.currentRound.bounty || 0;
 
-    if (totalWinningPool > 0) {
+    if (winningBets.length === 0) {
+      this.currentRound.bounty = bounty + totalLosingPool;
+      this.ponk.sendMessage(`Nobody won! The pot of ${totalLosingPool} rolls over to the next round. The new bounty is ${this.currentRound.bounty}.`);
+    } else {
+        const winners = [];
         winningBets.forEach(bet => {
             const proportion = bet.amount / totalWinningPool;
-            const winnings = bet.amount + (totalLosingPool * proportion);
+            const winnings = bet.amount + ((totalLosingPool + bounty) * proportion);
             this.updateBalance(bet.user, winnings);
-            this.ponk.sendMessage(`${bet.user} won ${Math.round(winnings)} credits!`);
+            winners.push({ user: bet.user, winnings: Math.round(winnings) });
+            this.ponk.sendPrivate(`${bet.user}, you won ${Math.round(winnings)} credits!`, bet.user);
         });
+
+        winners.sort((a, b) => b.winnings - a.winnings);
+        const topWinners = winners.slice(0, 3).map(winner => `${winner.user} (${winner.winnings})`).join(', ');
+        this.ponk.sendMessage(`The winner is ${winner}! Top winners: ${topWinners}.`);
+        this.currentRound.bounty = 0;
     }
 
     // const winnerOdds = await this.db.getTeam(winningTeam);
@@ -185,8 +206,7 @@ class Betting {
     // await this.db.updateTeamOdds(winningTeam, winnerOdds - 0.1);
     // await this.db.updateTeamOdds(losingTeam, loserOdds + 0.1);
 
-    this.ponk.sendMessage(`The winner is ${winner}! Payouts complete.`);
-    this.currentRound = { teamA: null, teamB: null, bets: [], open: false };
+    this.currentRound = { teamA: null, teamB: null, bets: [], open: false, bounty: this.currentRound.bounty };
     await this.saveCurrentRound();
     this.saveLedger();
     return {
