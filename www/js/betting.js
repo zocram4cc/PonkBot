@@ -14,71 +14,137 @@ function updateBettingInfo() {
       } else {
         infoDiv.innerHTML = `
           <p><strong>${round.teamA}</strong> vs <strong>${round.teamB}</strong></p>
-          <p>Total on ${round.teamA}: ${localeNum.format(totals[round.teamA])}</p>
-          <p>Total on ${round.teamB}: ${localeNum.format(totals[round.teamB])}</p>
         `;
       }
 
-      const tableDiv = document.getElementById('betting-table');
-      if (round.bets.length === 0) {
-        tableDiv.innerHTML = '<p>No bets placed yet.</p>';
-        return;
+      document.getElementById('team-a-name').textContent = round.teamA;
+      document.getElementById('team-b-name').textContent = round.teamB;
+
+      const teamABets = round.bets.filter(bet => bet.team.toLowerCase() === round.teamA.toLowerCase());
+      const teamBBets = round.bets.filter(bet => bet.team.toLowerCase() === round.teamB.toLowerCase());
+
+      const teamATableDiv = document.getElementById('team-a-table');
+      if (teamABets.length === 0) {
+        teamATableDiv.innerHTML = '<p>No bets placed yet.</p>';
+      } else {
+        const table = `
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${teamABets.map(bet => `
+                <tr>
+                  <td>${bet.user}</td>
+                  <td>${bet.amount.toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        teamATableDiv.innerHTML = table;
       }
 
-      const table = `
-        <table>
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Team</th>
-              <th>Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${round.bets.map(bet => `
+      const teamBTableDiv = document.getElementById('team-b-table');
+      if (teamBBets.length === 0) {
+        teamBTableDiv.innerHTML = '<p>No bets placed yet.</p>';
+      } else {
+        const table = `
+          <table>
+            <thead>
               <tr>
-                <td>${bet.user}</td>
-                <td>${bet.team}</td>
-                <td class="text-end">${localeNum.format(bet.amount)}</td>
+                <th>User</th>
+                <th>Amount</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-      tableDiv.innerHTML = table;
+            </thead>
+            <tbody>
+              ${teamBBets.map(bet => `
+                <tr>
+                  <td>${bet.user}</td>
+                  <td>${bet.amount.toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        teamBTableDiv.innerHTML = table;
+      }
+
+      const totalsDiv = document.getElementById('betting-totals');
+      if (!round.teamA || !round.teamB) {
+        totalsDiv.style.display = 'none';
+      } else {
+        totalsDiv.style.display = 'block';
+        const totalAmount = Object.values(totals).reduce((a, b) => a + b, 0);
+        totalsDiv.innerHTML = `
+          <p>Total on ${round.teamA}: ${totals[round.teamA].toLocaleString()}</p>
+          <p>Total on ${round.teamB}: ${totals[round.teamB].toLocaleString()}</p>
+          <p><strong>Total Betting Pool: ${totalAmount.toLocaleString()}</strong></p>
+        `;
+      }
     });
 }
 
 function updateLedger() {
   fetch('/api/ledger')
     .then(res => res.json())
-    .then(ledger => {
-      const tableDiv = document.getElementById('ledger-table');
-      const users = Object.keys(ledger);
-      if (users.length === 0) {
-        tableDiv.innerHTML = '<p>Ledger is empty.</p>';
-        return;
+    .then(data => {
+      const { ledger, shame } = data;
+
+      const ledgerTableDiv = document.getElementById('ledger-table');
+      const ledgerUsers = Object.keys(ledger);
+      if (ledgerUsers.length === 0) {
+        ledgerTableDiv.innerHTML = '<p>Ledger is empty.</p>';
+      } else {
+        const ledgerTable = `
+          <table>
+            <thead>
+              <tr>
+                <th>User</th>
+                <th>Bucks</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${ledgerUsers.map(user => `
+                <tr>
+                  <td>${user}</td>
+                <td class="text-end">${localeNum.format(ledger[user])}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        ledgerTableDiv.innerHTML = ledgerTable;
       }
 
-      const table = `
-        <table>
-          <thead>
-            <tr>
-              <th>User</th>
-              <th>Bucks</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${users.map(user => `
+      const shameTableDiv = document.getElementById('shame-table');
+      const shameUsers = Object.keys(shame);
+      if (shameUsers.length === 0) {
+        shameTableDiv.innerHTML = '<p>No one is in debt.</p>';
+      } else {
+        const shameTable = `
+          <table>
+            <thead>
               <tr>
-                <td>${user}</td>
-                <td class="text-end">${localeNum.format(ledger[user])}</td>
+                <th>User</th>
+                <th>Bucks</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      `;
-      tableDiv.innerHTML = table;
+            </thead>
+            <tbody>
+              ${shameUsers.map(user => `
+                <tr>
+                  <td>${user}</td>
+                  <td>${shame[user]}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
+        shameTableDiv.innerHTML = shameTable;
+      }
     });
 }
 

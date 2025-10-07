@@ -153,10 +153,7 @@ class Betting {
     if (this.currentRound.bets.some(bet => bet.user.toLowerCase() === lowerUser)) {
         return { success: false, message: 'You have already placed a bet for this round.' };
     }
-    const balance = this.getBalance(lowerUser);
-    if (amount > balance) {
-      return { success: false, message: 'You do not have enough credits.' };
-    }
+
 
     this.updateBalance(lowerUser, -amount);
     this.currentRound.bets.push({ user, team, amount });
@@ -216,11 +213,14 @@ class Betting {
   }
   
   getLedger() {
-    return Object.fromEntries(
-      Object.entries(this.ledger)
-        .map(([user, balance]) => [user, Math.trunc(balance)])
-        .sort(([, a], [, b]) => b - a)
-    );
+    const sortedLedger = Object.entries(this.ledger)
+      .map(([user, balance]) => [user, Math.trunc(balance)])
+      .sort(([, a], [, b]) => b - a);
+
+    const ledger = Object.fromEntries(sortedLedger.filter(([, balance]) => balance > 0));
+    const shame = Object.fromEntries(sortedLedger.filter(([, balance]) => balance <= 0));
+
+    return { ledger, shame };
   }
 
   getCurrentBets() {

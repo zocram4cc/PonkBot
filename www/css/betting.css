@@ -6,17 +6,23 @@
   margin-bottom: 20px;
 }
 
-#betting-table table {
+#team-a-table table, #team-b-table table, #ledger-table table, #shame-table table {
   width: 100%;
   border-collapse: collapse;
 }
 
-#betting-table th, #betting-table td {
+#team-a-table th, #team-a-table td, #team-b-table th, #team-b-table td, #ledger-table th, #ledger-table td, #shame-table th, #shame-table td {
   border: 1px solid #ccc;
   padding: 8px;
   text-align: left;
 }
 
-#betting-table th {
+#team-a-table th, #team-b-table th, #ledger-table th, #shame-table th {
   background-color: light-dark(#f2f2f2, #444);
+}
+
+@media (max-width: 768px) {
+  .col-md-6 {
+    width: 100%;
+  }
 }

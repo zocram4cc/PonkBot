@@ -12,11 +12,23 @@ body
     h1 Betting
     #betting-info
       p Loading...
-    h2 Bets
-    #betting-table
-      p Loading...
-    h2 Ledger
-    #ledger-table
-      p Loading...
+    .row
+      .col-md-6
+        h2 Bets
+        #betting-totals
+          p Loading...
+        h3#team-a-name Team A
+        #team-a-table
+          p Loading...
+        h3#team-b-name Team B
+        #team-b-table
+          p Loading...
+      .col-md-6
+        h2 Ledger
+        #ledger-table
+          p Loading...
+        h2 Table of Shame
+        #shame-table
+          p Loading...
 
   script( type='text/javascript', src='/js/betting.js')
