@@ -18,10 +18,10 @@ class Betting {
 
     this.loadLedger();
     this.loadCurrentRound();
-    this.refundOpenBet();
+    this.loadAllowDraw();
   }
 
-  async refundOpenBet() {
+  async refundCurrentRound() {
     console.log('Checking for open bet to refund...');
     console.log('this.currentRound.open:', this.currentRound.open);
     console.log('this.currentRound.bets.length:', this.currentRound.bets.length);
@@ -75,6 +75,22 @@ class Betting {
     }
   }
 
+  async loadAllowDraw() {
+    try {
+      const data = await this.db.getKeyValue('betting_allow_draw');
+      if (data) {
+        this.allowDraw = JSON.parse(data);
+        console.info('Betting allowDraw loaded.', this.allowDraw);
+      } else {
+        this.allowDraw = this.config.allowDraw || false;
+        console.info('No betting allowDraw data found in DB, defaulting to', this.allowDraw);
+      }
+    } catch (err) {
+      console.error('Error loading betting allowDraw, defaulting to false.', err);
+      this.allowDraw = false;
+    }
+  }
+
   async saveLedger() {
     try {
       await this.db.setKeyValue('betting_ledger', JSON.stringify(this.ledger, null, 2));
@@ -88,6 +104,14 @@ class Betting {
       await this.db.setKeyValue('betting_current_round', JSON.stringify(this.currentRound, null, 2));
     } catch (err) {
       console.error('Error saving current betting round.', err);
+    }
+  }
+
+  async saveAllowDraw() {
+    try {
+      await this.db.setKeyValue('betting_allow_draw', JSON.stringify(this.allowDraw));
+    } catch (err) {
+      console.error('Error saving betting allowDraw.', err);
     }
   }
 
@@ -124,7 +148,10 @@ class Betting {
     //     await this.db.insertTeam(teamB);
     //     teamB_odds = 1.5;
     // }
-    let message = `Betting is open! Today\'s match: ${teamA} vs ${teamB}. Use !bet <team> <amount> to place your bet.`;
+    let message = `Betting is open for ${teamA} vs ${teamB}. Use !bet /team/ <amount> to place your bet.`;
+    if (this.allowDraw) {
+      message += ' You can also bet on a draw. Use !bet draw <amount>.';
+    }
     if (this.currentRound.bounty > 0) {
       message += ` The pot starts with a bounty of ${this.currentRound.bounty}!`;
     }
@@ -147,7 +174,11 @@ class Betting {
     if (!this.currentRound.open) {
       return { success: false, message: 'Betting is closed.' };
     }
-    if (team.toLowerCase() !== this.currentRound.teamA.toLowerCase() && team.toLowerCase() !== this.currentRound.teamB.toLowerCase()) {
+    const validTeams = [this.currentRound.teamA.toLowerCase(), this.currentRound.teamB.toLowerCase()];
+    if (this.allowDraw) {
+      validTeams.push('draw');
+    }
+    if (!validTeams.includes(team.toLowerCase())) {
       return { success: false, message: 'Invalid team.' };
     }
     if (this.currentRound.bets.some(bet => bet.user.toLowerCase() === lowerUser)) {
@@ -169,10 +200,12 @@ class Betting {
       this.closeBetting();
     }
     const winningTeam = winner.toLowerCase();
-    const losingTeam = (winningTeam === this.currentRound.teamA.toLowerCase()) ? this.currentRound.teamB.toLowerCase() : this.currentRound.teamA.toLowerCase();
+    if (winningTeam === 'draw' && !this.allowDraw) {
+      return { success: false, message: 'Draws are not enabled for this round.' };
+    }
 
     const winningBets = this.currentRound.bets.filter(bet => bet.team.toLowerCase() === winningTeam);
-    const losingBets = this.currentRound.bets.filter(bet => bet.team.toLowerCase() === losingTeam);
+    const losingBets = this.currentRound.bets.filter(bet => bet.team.toLowerCase() !== winningTeam);
 
     const totalWinningPool = winningBets.reduce((sum, bet) => sum + bet.amount, 0);
     const totalLosingPool = losingBets.reduce((sum, bet) => sum + bet.amount, 0);
@@ -193,7 +226,12 @@ class Betting {
 
         winners.sort((a, b) => b.winnings - a.winnings);
         const topWinners = winners.slice(0, 3).map(winner => `${winner.user} (${winner.winnings})`).join(', ');
-        this.ponk.sendMessage(`The winner is ${winner}! Top winners: ${topWinners}.`);
+        if (winningTeam === 'draw') {
+          this.ponk.sendMessage(`The result is a draw! Top winners: ${topWinners}.`);
+        }
+        else {
+          this.ponk.sendMessage(`The winner is ${winner}! Top winners: ${topWinners}.`);
+        }
         this.currentRound.bounty = 0;
     }
 
@@ -230,13 +268,26 @@ class Betting {
     const teamBTotal = this.currentRound.bets
       .filter(bet => bet.team.toLowerCase() === this.currentRound.teamB.toLowerCase())
       .reduce((sum, bet) => sum + bet.amount, 0);
+    const totals = {
+      [this.currentRound.teamA]: teamATotal,
+      [this.currentRound.teamB]: teamBTotal,
+    };
+    if (this.allowDraw) {
+      totals.draw = this.currentRound.bets
+        .filter(bet => bet.team.toLowerCase() === 'draw')
+        .reduce((sum, bet) => sum + bet.amount, 0);
+    }
 
     return {
-      round: this.currentRound,
-      totals: {
-        [this.currentRound.teamA]: teamATotal,
-        [this.currentRound.teamB]: teamBTotal,
-      }
+      round: {
+        teamA: this.currentRound.teamA,
+        teamB: this.currentRound.teamB,
+        bets: this.currentRound.bets,
+        open: this.currentRound.open,
+        bounty: this.currentRound.bounty,
+        allowDraw: this.allowDraw
+      },
+      totals,
     };
   }
 }
@@ -279,6 +330,31 @@ module.exports = {
       }).catch((err) => {
         this.sendPrivate(err, user);
       });
+    }.bind(ponk);
+    ponk.commands.handlers.betdraw = function(user, params, { command, message, rank }) {
+      this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
+        const [option] = params.split(' ');
+        if (option === 'on') {
+          this.betting.allowDraw = true;
+          this.sendMessage('Betting on draws is now enabled.');
+        } else if (option === 'off') {
+          this.betting.allowDraw = false;
+          this.sendMessage('Betting on draws is now disabled.');
+        } else {
+          this.sendMessage('Usage: !betdraw <on|off>');
+          return;
+        }
+        this.betting.saveAllowDraw();
+      }).catch((err) => {
+        this.sendPrivate(err, user);
+      });
+    }.bind(ponk);
+    ponk.commands.handlers.refundround = function(user, params, { command, message, rank }) {
+        this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
+            this.betting.refundCurrentRound();
+        }).catch((err) => {
+            this.sendPrivate(err, user);
+        });
     }.bind(ponk);
   }
 };

@@ -73,3 +73,4 @@ prod/
 
 # Fuck package lock
 package-lock.json
+config.js
