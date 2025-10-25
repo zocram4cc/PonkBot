@@ -131,8 +131,7 @@ function updateLedger() {
       const { ledger, shame } = data;
 
       const ledgerTableDiv = document.getElementById('ledger-table');
-      const ledgerUsers = Object.keys(ledger);
-      if (ledgerUsers.length === 0) {
+      if (ledger.length === 0) {
         ledgerTableDiv.innerHTML = '<p>Ledger is empty.</p>';
       } else {
         const ledgerTable = `
@@ -144,10 +143,10 @@ function updateLedger() {
               </tr>
             </thead>
             <tbody>
-              ${ledgerUsers.map(user => `
+              ${ledger.map(entry => `
                 <tr>
-                  <td>${user}</td>
-                <td class="text-end">${localeNum.format(ledger[user])}</td>
+                  <td>${entry.user}</td>
+                  <td class="text-end">${localeNum.format(entry.balance)}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -157,8 +156,7 @@ function updateLedger() {
       }
 
       const shameTableDiv = document.getElementById('shame-table');
-      const shameUsers = Object.keys(shame);
-      if (shameUsers.length === 0) {
+      if (shame.length === 0) {
         shameTableDiv.innerHTML = '<p>No one is in debt.</p>';
       } else {
         const shameTable = `
@@ -170,10 +168,10 @@ function updateLedger() {
               </tr>
             </thead>
             <tbody>
-              ${shameUsers.map(user => `
+              ${shame.map(entry => `
                 <tr>
-                  <td>${user}</td>
-                  <td>${localeNum.format(shame[user])}</td>
+                  <td>${entry.user}</td>
+                  <td>${localeNum.format(entry.balance)}</td>
                 </tr>
               `).join('')}
             </tbody>

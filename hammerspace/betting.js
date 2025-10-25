@@ -221,7 +221,7 @@ class Betting {
             const winnings = bet.amount + ((totalLosingPool + bounty) * proportion);
             this.updateBalance(bet.user, winnings);
             winners.push({ user: bet.user, winnings: Math.round(winnings) });
-            this.ponk.sendPrivate(`${bet.user}, you won ${Math.round(winnings)} credits!`, bet.user);
+            //this.ponk.sendPrivate(`${bet.user}, you won ${Math.round(winnings)} credits!`, bet.user);
         });
 
         winners.sort((a, b) => b.winnings - a.winnings);
@@ -255,8 +255,12 @@ class Betting {
       .map(([user, balance]) => [user, Math.trunc(balance)])
       .sort(([, a], [, b]) => b - a);
 
-    const ledger = Object.fromEntries(sortedLedger.filter(([, balance]) => balance > 0));
-    const shame = Object.fromEntries(sortedLedger.filter(([, balance]) => balance <= 0));
+    const ledger = sortedLedger
+      .filter(([, balance]) => balance > 0)
+      .map(([user, balance]) => ({ user, balance }));
+    const shame = sortedLedger
+      .filter(([, balance]) => balance <= 0)
+      .map(([user, balance]) => ({ user, balance }));
 
     return { ledger, shame };
   }
