@@ -1,8 +1,5 @@
 // www/js/betting.js
 
-const userLocale = navigator.languages[0];
-const localeNum = new Intl.NumberFormat(userLocale,"en");
-
 function updateBettingInfo() {
   fetch('/api/bets')
     .then(res => res.json())
@@ -146,7 +143,7 @@ function updateLedger() {
               ${ledger.map(entry => `
                 <tr>
                   <td>${entry.user}</td>
-                  <td class="text-end">${localeNum.format(entry.balance)}</td>
+                  <td class="text-end">${entry.balance.toLocaleString()}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -171,7 +168,7 @@ function updateLedger() {
               ${shame.map(entry => `
                 <tr>
                   <td>${entry.user}</td>
-                  <td>${localeNum.format(entry.balance)}</td>
+                  <td>${entry.balance.toLocaleString()}</td>
                 </tr>
               `).join('')}
             </tbody>
