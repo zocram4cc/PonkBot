@@ -360,5 +360,43 @@ module.exports = {
             this.sendPrivate(err, user);
         });
     }.bind(ponk);
+    ponk.commands.handlers.topbets = function(user, params, { command, message, rank }) {
+        const { ledger } = this.betting.getLedger();
+        const top = ledger.slice(0, 5)
+            .map(({user, balance}) => `${user}: ${balance}`)
+            .join(', ');
+        this.sendMessage(`Top 5 bettors: ${top}`);
+    }.bind(ponk);
+    ponk.commands.handlers.forcebet = function(user, params, { command, message, rank }) {
+        this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
+            const [teamA, teamB] = params.split(' ');
+            if (!teamA || !teamB) {
+                return this.sendMessage('Usage: !forcebet <teamA> <teamB>');
+            }
+            this.betting.startRound(teamA, teamB);
+        }).catch((err) => {
+            this.sendPrivate(err, user);
+        });
+    }.bind(ponk);
+    ponk.commands.handlers.forceclose = function(user, params, { command, message, rank }) {
+        this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
+            const result = this.betting.closeBetting();
+            this.sendMessage(result.message);
+        }).catch((err) => {
+            this.sendPrivate(err, user);
+        });
+    }.bind(ponk);
+    ponk.commands.handlers.forcewinner = function(user, params, { command, message, rank }) {
+        this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
+            const winner = params.trim();
+            if (!winner) {
+                return this.sendPrivate('You must specify a winner.', user);
+            }
+            const result = this.betting.resolveRound(winner);
+            this.sendMessage(result.message);
+        }).catch((err) => {
+            this.sendPrivate(err, user);
+        });
+    }.bind(ponk);
   }
 };
