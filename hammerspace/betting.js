@@ -30,7 +30,7 @@ class Betting {
       this.ponk.sendMessage('Bot restarted with an open bet. Refunding all placed bets.');
       for (const bet of this.currentRound.bets) {
         this.updateBalance(bet.user, bet.amount);
-        this.ponk.sendPrivate(`${bet.user}, your bet of ${bet.amount} has been refunded.`, bet.user);
+        this.ponk.sendPrivate(`${bet.user}, your bet of ${bet.amount.toLocaleString()} has been refunded.`, bet.user);
       }
       this.currentRound = { teamA: null, teamB: null, bets: [], open: false, bounty: 0 };
       await this.saveCurrentRound();
@@ -153,7 +153,7 @@ class Betting {
       message += ' You can also bet on a draw. Use !bet draw <amount>.';
     }
     if (this.currentRound.bounty > 0) {
-      message += ` The pot starts with a bounty of ${this.currentRound.bounty}!`;
+      message += ` The pot starts with a bounty of ${this.currentRound.bounty.toLocaleString()}!`;
     }
     this.ponk.sendMessage(message);
     return this.currentRound;
@@ -189,7 +189,7 @@ class Betting {
     this.updateBalance(lowerUser, -amount);
     this.currentRound.bets.push({ user, team, amount });
     await this.saveCurrentRound();
-    return { success: true, message: `Bet placed on ${team} for ${amount} by ${user}.` };
+    return { success: true, message: `Bet placed on ${team} for ${amount.toLocaleString()} by ${user}.` };
   }
 
   async resolveRound(winner) {
@@ -213,7 +213,7 @@ class Betting {
 
     if (winningBets.length === 0) {
       this.currentRound.bounty = bounty + totalLosingPool;
-      this.ponk.sendMessage(`Nobody won! The pot of ${totalLosingPool} rolls over to the next round. The new bounty is ${this.currentRound.bounty}.`);
+      this.ponk.sendMessage(`Nobody won! The pot of ${totalLosingPool.toLocaleString()} rolls over to the next round. The new bounty is ${this.currentRound.bounty.toLocaleString()}.`);
     } else {
         const winners = [];
         winningBets.forEach(bet => {
@@ -225,7 +225,7 @@ class Betting {
         });
 
         winners.sort((a, b) => b.winnings - a.winnings);
-        const topWinners = winners.slice(0, 3).map(winner => `${winner.user} (${winner.winnings})`).join(', ');
+        const topWinners = winners.slice(0, 3).map(winner => `${winner.user} (${winner.winnings.toLocaleString()})`).join(', ');
         if (winningTeam === 'draw') {
           this.ponk.sendMessage(`The result is a draw! Top winners: ${topWinners}.`);
         }
