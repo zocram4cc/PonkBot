@@ -320,7 +320,7 @@ module.exports = {
     }.bind(ponk);
     ponk.commands.handlers.bucks = function(user, params, { command, message, rank }) {
       const balance = ponk.betting.getBalance(user);
-      ponk.sendPrivate(`You have ${balance} bucks.`, user);
+      ponk.sendPrivate(`You have ${balance.toLocaleString()} bucks.`, user);
     }.bind(ponk);
     ponk.commands.handlers.addbucks = function(user, params, { command, message, rank }) {
       this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
@@ -330,7 +330,7 @@ module.exports = {
           return this.sendMessage('Usage: !addbucks <user> <amount>');
         }
         this.betting.updateBalance(targetUser, amount);
-        this.sendMessage(`${amount} bucks added to ${targetUser}.`);
+        this.sendMessage(`${amount.toLocaleString()} bucks added to ${targetUser}.`);
       }).catch((err) => {
         this.sendPrivate(err, user);
       });
@@ -363,7 +363,7 @@ module.exports = {
     ponk.commands.handlers.topbets = function(user, params, { command, message, rank }) {
         const { ledger } = this.betting.getLedger();
         const top = ledger.slice(0, 5)
-            .map(({user, balance}) => `${user}: ${balance}`)
+            .map(({user, balance}) => `${user}: ${balance.toLocaleString()}`)
             .join(', ');
         this.sendMessage(`Top 5 bettors: ${top}`);
     }.bind(ponk);
