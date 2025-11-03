@@ -83,7 +83,7 @@ class Betting {
       this.ponk.sendMessage('Bot restarted with an open bet. Refunding all placed bets.');
       for (const bet of this.currentRound.bets) {
         this.updateBalance(bet.user, bet.amount);
-        this.ponk.sendPrivate(`${bet.user}, your bet of ${bet.amount} has been refunded.`, bet.user);
+        this.ponk.sendPrivate(`${bet.user}, your bet of ${bet.amount.toLocaleString()} has been refunded.`, bet.user);
       }
       this.currentRound = { teamA: null, teamB: null, bets: [], open: false, bounty: 0 };
       await this.saveCurrentRound();
@@ -207,7 +207,7 @@ class Betting {
       message += ' You can also bet on a draw. Use !bet draw <amount>.';
     }
     if (this.currentRound.bounty > 0) {
-      message += ` The pot starts with a bounty of ${this.currentRound.bounty}!`;
+      message += ` The pot starts with a bounty of ${this.currentRound.bounty.toLocaleString()}!`;
     }
     this.ponk.sendMessage(message);
     return this.currentRound;
@@ -279,7 +279,7 @@ class Betting {
     this.updateBalance(lowerUser, -amount); // Deduct original amount including tax (potentially modified by CBR)
     this.currentRound.bets.push({ user, team, amount: effectiveAmount }); // Bet with effective amount (potentially modified by CBR and tax)
     await this.saveCurrentRound();
-    return { success: true, message: `Bet placed on ${team} for ${effectiveAmount} by ${user}.` };
+    return { success: true, message: `Bet placed on ${team} for ${effectiveAmount.toLocaleString()} by ${user}.` };
   }
 
   async resolveRound(winner) {
@@ -303,7 +303,7 @@ class Betting {
 
     if (winningBets.length === 0) {
       this.currentRound.bounty = bounty + totalLosingPool;
-      this.ponk.sendMessage(`Nobody won! The pot of ${totalLosingPool} rolls over to the next round. The new bounty is ${this.currentRound.bounty}.`);
+      this.ponk.sendMessage(`Nobody won! The pot of ${totalLosingPool.toLocaleString()} rolls over to the next round. The new bounty is ${this.currentRound.bounty.toLocaleString()}.`);
     } else {
         const winners = [];
         winningBets.forEach(bet => {
@@ -315,7 +315,7 @@ class Betting {
         });
 
         winners.sort((a, b) => b.winnings - a.winnings);
-        const topWinners = winners.slice(0, 3).map(winner => `${winner.user} (${winner.winnings})`).join(', ');
+        const topWinners = winners.slice(0, 3).map(winner => `${winner.user} (${winner.winnings.toLocaleString()})`).join(', ');
         if (winningTeam === 'draw') {
           this.ponk.sendMessage(`The result is a draw! Top winners: ${topWinners}.`);
         }
@@ -411,7 +411,7 @@ module.exports = {
     }.bind(ponk);
     ponk.commands.handlers.bucks = function(user, params, { command, message, rank }) {
       const balance = ponk.betting.getBalance(user);
-      ponk.sendPrivate(`You have ${balance} bucks.`, user);
+      ponk.sendPrivate(`You have ${balance.toLocaleString()} bucks.`, user);
     }.bind(ponk);
     ponk.commands.handlers.addbucks = function(user, params, { command, message, rank }) {
       this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
@@ -421,7 +421,7 @@ module.exports = {
           return this.sendMessage('Usage: !addbucks <user> <amount>');
         }
         this.betting.updateBalance(targetUser, amount);
-        this.sendMessage(`${amount} bucks added to ${targetUser}.`);
+        this.sendMessage(`${amount.toLocaleString()} bucks added to ${targetUser}.`);
       }).catch((err) => {
         this.sendPrivate(err, user);
       });
@@ -462,7 +462,7 @@ module.exports = {
     ponk.commands.handlers.topbets = function(user, params, { command, message, rank }) {
         const { ledger } = this.betting.getLedger();
         const top = ledger.slice(0, 5)
-            .map(({user, balance}) => `${user}: ${balance}`)
+            .map(({user, balance}) => `${user}: ${balance.toLocaleString()}`)
             .join(', ');
         this.sendMessage(`Top 5 bettors: ${top}`);
     }.bind(ponk);
