@@ -30,7 +30,8 @@ class Betting {
       { threshold: 10000000, rate: 0.40 },
       { threshold: 100000000, rate: 0.50 },
       { threshold: 1000000000, rate: 0.75 },
-      { threshold: Infinity, rate: 0.9 } // 30% for over 10,000
+      { threshold: 10000000000, rate: 0.9 },
+      { threshold: Infinity, rate: 0.95 } // 30% for over 10,000
     ];
   }
 
@@ -40,16 +41,19 @@ class Betting {
 
     for (const user in this.ledger) {
       const balance = this.ledger[user];
-      if (balance > 20000) {
+      if (balance > 2000000) {
         this.ledger[user] *= 0.995; // 0.2% decay for positive balances
-        if (balance > 10000000) {
-          this.ledger[user] *= 0.85;
+        if (balance > 100000000000) {
+          this.ledger[user] *= 0.9;
         }
         hadPositiveDecay = true;
       }
-      else if (balance < -2000) { 
+      else if (balance < -20000) { 
         this.ledger[user] *= 0.995; // 0.5% decay towards zero for negative balances
         hadNegativeDecay = true;
+	if (balance < -10000000000) {
+	  this.ledger[user] *= 0.9;
+	}
       }
     }
 
