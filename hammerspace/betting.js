@@ -1,4 +1,3 @@
-
 // betting.js - Saltybet-style betting logic for PonkBot
 
 class Betting {
@@ -19,6 +18,60 @@ class Betting {
     this.loadLedger();
     this.loadCurrentRound();
     this.loadAllowDraw();
+
+    // Set up the hourly economic decay
+    this.bettingRoundCounter = 0; // Initialize counter
+    setInterval(() => this.applyEconomicDecay(), 3600 * 1000);
+    this.config.betTaxTiers = this.config.betTaxTiers || [
+      { threshold: 1000, rate: 0 },
+      { threshold: 10000, rate: 0.02 }, // 1%
+      { threshold: 100000, rate: 0.20 }, // 5%
+      { threshold: 1000000, rate: 0.30 },
+      { threshold: 10000000, rate: 0.40 },
+      { threshold: 100000000, rate: 0.50 },
+      { threshold: 1000000000, rate: 0.75 },
+      { threshold: Infinity, rate: 0.9 } // 30% for over 10,000
+    ];
+  }
+
+  applyEconomicDecay() {
+    let hadPositiveDecay = false;
+    let hadNegativeDecay = false;
+
+    for (const user in this.ledger) {
+      const balance = this.ledger[user];
+      if (balance > 20000) {
+        this.ledger[user] *= 0.995; // 0.2% decay for positive balances
+        if (balance > 10000000) {
+          this.ledger[user] *= 0.85;
+        }
+        hadPositiveDecay = true;
+      }
+      else if (balance < -2000) { 
+        this.ledger[user] *= 0.995; // 0.5% decay towards zero for negative balances
+        hadNegativeDecay = true;
+      }
+    }
+
+    if (hadPositiveDecay || hadNegativeDecay) {
+      this.saveLedger();
+    }
+
+    // Conditional announcements
+    if (this.bettingRoundCounter % 5 === 0) { // Announce every 5 betting rounds
+          if (hadPositiveDecay || hadNegativeDecay) {
+            this.saveLedger();
+          }
+          // Conditional announcements
+          /*if (this.bettingRoundCounter % 5 === 0) { // Announce every 5 betting rounds
+      if (hadPositiveDecay) {
+        this.ponk.sendMessage("SMELL THAT? That's the smell of 0.2% of your hoard rotting away. Get betting!");
+      }
+      if (hadNegativeDecay) {
+        this.ponk.sendMessage("Good news, debtors! The mildew seems to be eating 0.5% of your debt! What a lucky break!");
+      }
+          }*/
+    }
   }
 
   async refundCurrentRound() {
@@ -130,6 +183,7 @@ class Betting {
   }
 
   async startRound(teamA, teamB) {
+    this.bettingRoundCounter++; // Increment counter for economic decay announcements
     this.currentRound = {
       teamA,
       teamB,
@@ -185,11 +239,47 @@ class Betting {
         return { success: false, message: 'You have already placed a bet for this round.' };
     }
 
+    let currentBalance = this.getBalance(lowerUser); // Get current balance
 
-    this.updateBalance(lowerUser, -amount);
-    this.currentRound.bets.push({ user, team, amount });
+    // 1. Free Bucks for Zero Balance
+    if (currentBalance === 0) {
+      this.updateBalance(lowerUser, 100); // Give 100 bucks
+      this.ponk.sendPrivate(`${user}, the Central Bank of Rigging has granted you 100 bucks to get back in the game! Your balance is now 100.`, user);
+      currentBalance = 100; // Update currentBalance for subsequent checks
+    }
+
+    // 2. Central Bank of Rigging (CBR) Intervention
+    if (currentBalance < 0) {
+      if (Math.random() < 0.5) { // 50% chance
+        this.ledger[lowerUser] = 0; // Set balance to 0
+        amount = 1; // Change bet to 1
+        this.ponk.sendPrivate(`${user}, the Central Bank of Rigging found your negative balance! Your debt has been cleared, and your current bet is now 1.`, user);
+        currentBalance = 0; // Update currentBalance for subsequent checks
+      }
+    }
+
+    // Apply Big Bet Tax
+    let taxAmount = 0;
+    let effectiveAmount = amount;
+    let taxRate = 0;
+
+    for (const tier of this.config.betTaxTiers) {
+      if (amount >= tier.threshold) {
+        taxRate = tier.rate;
+      }
+    }
+
+    if (taxRate > 0) {
+      taxAmount = Math.round(amount * taxRate);
+      effectiveAmount = amount - taxAmount;
+      const taxMessage = `Whoa there, Mr. Moneybags! A bet this size requires 'regulatory oversight.' I'm taking my ${taxRate * 100}% 'Big Bet Tax' ($${taxAmount}) off the top. Your actual bet is $${effectiveAmount}. Good luck.`;
+      this.ponk.sendPrivate(taxMessage, user);
+    }
+
+    this.updateBalance(lowerUser, -amount); // Deduct original amount including tax (potentially modified by CBR)
+    this.currentRound.bets.push({ user, team, amount: effectiveAmount }); // Bet with effective amount (potentially modified by CBR and tax)
     await this.saveCurrentRound();
-    return { success: true, message: `Bet placed on ${team} for ${amount.toLocaleString()} by ${user}.` };
+    return { success: true, message: `Bet placed on ${team} for ${effectiveAmount.toLocaleString()} by ${user}.` };
   }
 
   async resolveRound(winner) {
@@ -244,6 +334,7 @@ class Betting {
     this.currentRound = { teamA: null, teamB: null, bets: [], open: false, bounty: this.currentRound.bounty };
     await this.saveCurrentRound();
     this.saveLedger();
+    this.applyEconomicDecay(); // Apply economic decay after round resolution
     return {
         success: true,
         message: `Winner declared: ${winner}. Payouts distributed.`
@@ -353,6 +444,14 @@ module.exports = {
         this.sendPrivate(err, user);
       });
     }.bind(ponk);
+    ponk.commands.handlers.betdecay = function(user, params, { command, message, rank }) {
+        this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
+            this.betting.applyEconomicDecay();
+            this.sendMessage(`${user} triggered economic decay! Get his ass!`);
+        }).catch((err) => {
+            this.sendPrivate(err, user);
+        });
+    }.bind(ponk);
     ponk.commands.handlers.refundround = function(user, params, { command, message, rank }) {
         this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
             this.betting.refundCurrentRound();
@@ -388,7 +487,7 @@ module.exports = {
     }.bind(ponk);
     ponk.commands.handlers.forcewinner = function(user, params, { command, message, rank }) {
         this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
-            const winner = params.trim();
+            const winner = params.split(' ')[0];
             if (!winner) {
                 return this.sendPrivate('You must specify a winner.', user);
             }
