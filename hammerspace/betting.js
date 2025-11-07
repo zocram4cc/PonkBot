@@ -384,7 +384,7 @@ module.exports = {
             } else {
               amount = parseInt(amountStr, 10);
             }
-            if (!team || isNaN(amount) || amount <= 0 || amount >= 9999999999999999999999999999999) {
+            if (!team || isNaN(amount) || amount <= 0 || amount >= Number.MAX_SAFE_INTEGER) {
                 return ponk.sendPrivate('Usage: !bet <team> <amount>', user);
             }
           } catch (err) {
