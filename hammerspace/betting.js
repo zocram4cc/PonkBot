@@ -384,11 +384,12 @@ module.exports = {
             } else {
               amount = parseInt(amountStr, 10);
             }
-            if (!team || isNaN(amount) || amount <= 0) {
+            if (!team || isNaN(amount) || amount <= 0 || amount >= 999999999999999999999999999999) {
                 return ponk.sendMessage('Usage: !bet <team> <amount>');
             }
           } catch (err) {
             console.error('Some retard broke it.', err);
+            return ponk.sendPrivate('Invalid bet amount. Please enter a whole number.', user);
         }
         const result = ponk.betting.placeBet(user, team, amount);
         ponk.sendPrivate(result.message, user);
