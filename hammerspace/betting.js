@@ -237,7 +237,7 @@ class Betting {
         }
     } else {
         // User is at 0 or in debt: Cap is a flat "mercy" amount
-        if (this.config.debtBetCap > amount) {
+        if (this.config.debtBetCap < amount) {
           amount = maxBet
           this.ponk.sendPrivate(`You broke nigga, I can only lend you $${this.config.debtBetCap.toLocaleString()}. Your bet has been capped at $${amount.toLocaleString()}.`, user);
         }
