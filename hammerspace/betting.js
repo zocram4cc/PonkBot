@@ -6,6 +6,8 @@ class Betting {
     this.db = ponk.db;
     this.config = ponk.betting || {};
     this.defaultBankroll = this.config.defaultBankroll || 1000;
+    this.config.betCapPercentage = this.config.betCapPercentage || 0.20; // Max 20% of bankroll
+    this.config.debtBetCap = this.config.debtBetCap || 500; // Max $500 bet if broke/in debt
     this.ledger = {};
     this.currentRound = {
       teamA: null,
@@ -20,17 +22,16 @@ class Betting {
     this.loadAllowDraw();
 
     // Set up the hourly economic decay
-    this.bettingRoundCounter = 0; // Initialize counter
-    setInterval(() => this.applyEconomicDecay(), 3600 * 1000);
+    //setInterval(() => this.applyEconomicDecay(), 3600 * 1000);
     this.config.betTaxTiers = this.config.betTaxTiers || [
-      { threshold: 1000, rate: 0 },
-      { threshold: 10000, rate: 0.02 }, // 1%
-      { threshold: 100000, rate: 0.20 }, // 5%
-      { threshold: 1000000, rate: 0.30 },
-      { threshold: 10000000, rate: 0.40 },
-      { threshold: 100000000, rate: 0.50 },
-      { threshold: 1000000000, rate: 0.75 },
-      { threshold: 10000000000, rate: 0.9 },
+      { threshold: 100000, rate: 0 },
+      { threshold: 1000000, rate: 0.10 }, // 1%
+      { threshold: 10000000, rate: 0.20 }, // 5%
+      { threshold: 100000000, rate: 0.30 },
+      { threshold: 1000000000, rate: 0.40 },
+      { threshold: 10000000000, rate: 0.50 },
+      { threshold: 100000000000, rate: 0.75 },
+      { threshold: 1000000000000, rate: 0.9 },
       { threshold: Infinity, rate: 0.95 } // 30% for over 10,000
     ];
   }
@@ -56,25 +57,8 @@ class Betting {
 	}
       }
     }
-
     if (hadPositiveDecay || hadNegativeDecay) {
       this.saveLedger();
-    }
-
-    // Conditional announcements
-    if (this.bettingRoundCounter % 5 === 0) { // Announce every 5 betting rounds
-          if (hadPositiveDecay || hadNegativeDecay) {
-            this.saveLedger();
-          }
-          // Conditional announcements
-          /*if (this.bettingRoundCounter % 5 === 0) { // Announce every 5 betting rounds
-      if (hadPositiveDecay) {
-        this.ponk.sendMessage("SMELL THAT? That's the smell of 0.2% of your hoard rotting away. Get betting!");
-      }
-      if (hadNegativeDecay) {
-        this.ponk.sendMessage("Good news, debtors! The mildew seems to be eating 0.5% of your debt! What a lucky break!");
-      }
-          }*/
     }
   }
 
@@ -187,7 +171,6 @@ class Betting {
   }
 
   async startRound(teamA, teamB) {
-    this.bettingRoundCounter++; // Increment counter for economic decay announcements
     this.currentRound = {
       teamA,
       teamB,
@@ -245,23 +228,15 @@ class Betting {
 
     let currentBalance = this.getBalance(lowerUser); // Get current balance
 
-    // 1. Free Bucks for Zero Balance
-    if (currentBalance === 0) {
-      this.updateBalance(lowerUser, 100); // Give 100 bucks
-      this.ponk.sendPrivate(`${user}, the Central Bank of Rigging has granted you 100 bucks to get back in the game! Your balance is now 100.`, user);
-      currentBalance = 100; // Update currentBalance for subsequent checks
+    if (currentBalance > 0) {
+        // User has money: Cap is a percentage of their bankroll
+        amount = Math.max(1, Math.floor(currentBalance * this.config.betCapPercentage));
+        ponk.sendMessage(`Your bet is too high! You can only bet up to ${this.config.betCapPercentage * 100}% of your bankroll. Your bet has been capped at $${maxBet.toLocaleString()}.`);
+    } else {
+        // User is at 0 or in debt: Cap is a flat "mercy" amount
+        amount = this.config.debtBetCap;
+        ponk.sendMessage(`You broke nigga, I can only lend you $${maxBet.toLocaleString()}. Your bet has been capped at $${maxBet.toLocaleString()}.`);
     }
-
-    // 2. Central Bank of Rigging (CBR) Intervention
-    if (currentBalance < 0) {
-      if (Math.random() < 0.5) { // 50% chance
-        this.ledger[lowerUser] = 0; // Set balance to 0
-        amount = 1; // Change bet to 1
-        this.ponk.sendPrivate(`${user}, the Central Bank of Rigging found your negative balance! Your debt has been cleared, and your current bet is now 1.`, user);
-        currentBalance = 0; // Update currentBalance for subsequent checks
-      }
-    }
-
     // Apply Big Bet Tax
     let taxAmount = 0;
     let effectiveAmount = amount;
