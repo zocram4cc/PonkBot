@@ -231,7 +231,7 @@ class Betting {
     if (currentBalance > 0) {
         // User has money: Cap is a percentage of their bankroll
         maxBet = Math.max(1, Math.floor(currentBalance * this.config.betCapPercentage));
-        if (maxBet > amount) {
+        if (maxBet < amount) {
           amount = maxBet
           this.ponk.sendPrivate(`Your bet is too high! You can only bet up to ${this.config.betCapPercentage * 100}% of your bankroll. Your bet has been capped at $${amount.toLocaleString()}.`, user);
         }
