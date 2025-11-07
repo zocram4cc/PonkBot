@@ -231,11 +231,11 @@ class Betting {
     if (currentBalance > 0) {
         // User has money: Cap is a percentage of their bankroll
         amount = Math.max(1, Math.floor(currentBalance * this.config.betCapPercentage));
-        this.ponk.sendMessage(`Your bet is too high! You can only bet up to ${this.config.betCapPercentage * 100}% of your bankroll. Your bet has been capped at $${maxBet.toLocaleString()}.`);
+        this.ponk.sendMessage(`Your bet is too high! You can only bet up to ${this.config.betCapPercentage * 100}% of your bankroll. Your bet has been capped at $${amount.toLocaleString()}.`);
     } else {
         // User is at 0 or in debt: Cap is a flat "mercy" amount
         amount = this.config.debtBetCap;
-        this.ponk.sendMessage(`You broke nigga, I can only lend you $${maxBet.toLocaleString()}. Your bet has been capped at $${maxBet.toLocaleString()}.`);
+        this.ponk.sendMessage(`You broke nigga, I can only lend you $${maxBet.toLocaleString()}. Your bet has been capped at $${amount.toLocaleString()}.`);
     }
     // Apply Big Bet Tax
     let taxAmount = 0;
