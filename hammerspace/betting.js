@@ -235,7 +235,7 @@ class Betting {
     } else {
         // User is at 0 or in debt: Cap is a flat "mercy" amount
         amount = this.config.debtBetCap;
-        this.ponk.sendMessage(`You broke nigga, I can only lend you $${maxBet.toLocaleString()}. Your bet has been capped at $${amount.toLocaleString()}.`);
+        this.ponk.sendMessage(`You broke nigga, I can only lend you $${this.config.debtBetCap.toLocaleString()}. Your bet has been capped at $${amount.toLocaleString()}.`);
     }
     // Apply Big Bet Tax
     let taxAmount = 0;
