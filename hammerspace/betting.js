@@ -256,7 +256,7 @@ class Betting {
     if (taxRate > 0) {
       taxAmount = Math.round(amount * taxRate);
       effectiveAmount = amount - taxAmount;
-      const taxMessage = `Whoa there, Mr. Moneybags! A bet this size requires 'regulatory oversight.' I'm taking my ${taxRate * 100}% 'Big Bet Tax' ($${taxAmount}) off the top. Your actual bet is $${effectiveAmount}. Good luck.`;
+      const taxMessage = `Whoa there, Mr. Moneybags! A bet this size requires 'regulatory oversight.' I'm taking my ${taxRate * 100}% 'Big Bet Tax' ($${taxAmount}) off the top. Your actual bet is $${effectiveAmount.toLocaleString()}. Good luck.`;
       this.ponk.sendPrivate(taxMessage, user);
     }
 
