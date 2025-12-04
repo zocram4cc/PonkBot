@@ -18,7 +18,7 @@
 }
 
 #team-a-table th, #team-b-table th, #draw-table th, #ledger-table th, #shame-table th {
-  background-color: light-dark(#f2f2f2, #444);
+  background-color: #444;
 }
 
 @media (max-width: 768px) {
