@@ -9,7 +9,7 @@ module.exports = {
 
         ponk.commands.handlers.racefinish = function(user, params, { command, message, rank }) {
             this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
-                this.sendMessage('Fetching GT4CC race results...');
+                this.sendPrivate('Fetching GT4CC race results...', user);
                 gt4cc.fetchRankings().then(results => {
                     const timestamp = Math.floor(Date.now() / 1000);
                     const raceName = params || `Race ${new Date().toISOString().split('T')[0]}`;
