@@ -75,3 +75,6 @@ prod/
 package-lock.json
 config.js
 *db
+
+#API scripts I save for my sanity
+scripts/

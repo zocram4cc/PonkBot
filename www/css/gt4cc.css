@@ -1,0 +1,22 @@
+/* www/css/gt4cc.css */
+
+#championship-table table {
+    margin-top: 1rem;
+}
+
+#races-list {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.table-dark th {
+    background-color: #212529;
+    border-color: #373b3e;
+}
+
+#race-details {
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 0.25rem;
+    background-color: #f8f9fa;
+}
