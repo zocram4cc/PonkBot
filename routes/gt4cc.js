@@ -64,5 +64,18 @@ module.exports = (ponk) => {
         }
     });
 
+    router.put('/race/:id', async (req, res) => {
+        const { name } = req.body;
+        if (!name) {
+            return res.status(400).json({ success: false, message: 'Missing name' });
+        }
+        try {
+            await ponk.db.gt4ccUpdateRaceTitle(req.params.id, name);
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     return router;
 };
