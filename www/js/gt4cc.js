@@ -52,8 +52,9 @@ function loadRaces() {
             let html = '';
             data.forEach(race => {
                 const date = new Date(race.timestamp * 1000).toLocaleString();
+                const escapedName = JSON.stringify(race.name).replace(/"/g, '&quot;');
                 html += `
-                    <button type="button" class="list-group-item list-group-item-action" onclick="loadRaceDetails(${race.id}, '${race.name}')">
+                    <button type="button" class="list-group-item list-group-item-action" onclick="loadRaceDetails(${race.id}, ${escapedName})">
                         <strong>${race.name}</strong><br>
                         <small>${date}</small>
                     </button>

@@ -77,5 +77,18 @@ module.exports = (ponk) => {
         }
     });
 
+    router.post('/race/:id/exchange', async (req, res) => {
+        const { pos1, pos2 } = req.body;
+        if (!pos1 || !pos2) {
+            return res.status(400).json({ success: false, message: 'Missing positions' });
+        }
+        try {
+            await ponk.db.gt4ccExchangeResults(req.params.id, parseInt(pos1), parseInt(pos2));
+            res.json({ success: true });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     return router;
 };
