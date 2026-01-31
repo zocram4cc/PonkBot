@@ -39,6 +39,45 @@ function loadChampionship() {
         });
 }
 
+function loadConstructors() {
+    fetch('/api/gt4cc/constructors')
+        .then(res => res.json())
+        .then(data => {
+            const container = document.getElementById('constructors-table');
+            if (data.length === 0) {
+                container.innerHTML = '<p>No data available.</p>';
+                return;
+            }
+
+            let html = `
+                <table class="table table-striped table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Rank</th>
+                            <th>Make</th>
+                            <th>Points</th>
+                            <th>Drivers</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            data.forEach((entry, index) => {
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${entry.make}</td>
+                        <td>${entry.total_points}</td>
+                        <td>${entry.driver_count}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        });
+}
+
 function loadRaces() {
     fetch('/api/gt4cc/races')
         .then(res => res.json())
@@ -101,4 +140,5 @@ function loadRaceDetails(id, name) {
 
 // Initial load
 loadChampionship();
+loadConstructors();
 loadRaces();

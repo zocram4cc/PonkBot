@@ -20,12 +20,19 @@ body
       li.active(role='presentation')
         a(href='#championship', aria-controls='championship', role='tab', data-toggle='tab') Championship
       li(role='presentation')
+        a(href='#constructors', aria-controls='constructors', role='tab', data-toggle='tab') Constructors
+      li(role='presentation')
         a(href='#races', aria-controls='races', role='tab', data-toggle='tab') Races
 
     .tab-content(style='margin-top: 15px;')
       #championship.tab-pane.fade.in.active(role='tabpanel')
         h2 Championship Standings
         #championship-table
+          p Loading...
+
+      #constructors.tab-pane.fade(role='tabpanel')
+        h2 Constructors Championship
+        #constructors-table
           p Loading...
       
       #races.tab-pane.fade(role='tabpanel')

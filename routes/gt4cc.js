@@ -34,6 +34,15 @@ module.exports = (ponk) => {
         }
     });
 
+    router.get('/constructors', async (req, res) => {
+        try {
+            const standings = await ponk.db.gt4ccGetConstructors();
+            res.json(standings);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     router.post('/race', async (req, res) => {
         const { timestamp, name, results } = req.body;
         if (!timestamp || !name || !results || !Array.isArray(results)) {
