@@ -6,18 +6,18 @@
   margin-bottom: 20px;
 }
 
-#team-a-table table, #team-b-table table, #draw-table table, #ledger-table table, #shame-table table {
+#team-a-table table, #team-b-table table, #draw-table table, #ledger-table table, #shame-table table, #tournament-choices table {
   width: 100%;
   border-collapse: collapse;
 }
 
-#team-a-table th, #team-a-table td, #team-b-table th, #team-b-table td, #draw-table th, #draw-table td, #ledger-table th, #ledger-table td, #shame-table th, #shame-table td {
+#team-a-table th, #team-a-table td, #team-b-table th, #team-b-table td, #draw-table th, #draw-table td, #ledger-table th, #ledger-table td, #shame-table th, #shame-table td, #tournament-choices th, #tournament-choices td {
   border: 1px solid #ccc;
   padding: 8px;
   text-align: left;
 }
 
-#team-a-table th, #team-b-table th, #draw-table th, #ledger-table th, #shame-table th {
+#team-a-table th, #team-b-table th, #draw-table th, #ledger-table th, #shame-table th, #tournament-choices th {
   background-color: light-dark(#f2f2f2, #444);
 }
 

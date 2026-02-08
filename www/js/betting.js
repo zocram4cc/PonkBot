@@ -36,7 +36,7 @@ function updateBettingInfo() {
               ${teamABets.map(bet => `
                 <tr>
                   <td>${bet.user}</td>
-                  <td>${bet.amount.toLocaleString()}</td>
+                  <td class="text-end">${bet.amount.toLocaleString()}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -61,7 +61,7 @@ function updateBettingInfo() {
               ${teamBBets.map(bet => `
                 <tr>
                   <td>${bet.user}</td>
-                  <td>${bet.amount.toLocaleString()}</td>
+                  <td class="text-end">${bet.amount.toLocaleString()}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -90,7 +90,7 @@ function updateBettingInfo() {
                 ${drawBets.map(bet => `
                   <tr>
                     <td>${bet.user}</td>
-                    <td>${bet.amount.toLocaleString()}</td>
+                    <td class="text-end">${bet.amount.toLocaleString()}</td>
                   </tr>
                 `).join('')}
               </tbody>
@@ -170,7 +170,7 @@ function updateTournamentInfo() {
                 ${choiceBets.map(bet => `
                   <tr>
                     <td>${bet.user}</td>
-                    <td>${bet.amount.toLocaleString()}</td>
+                    <td class="text-end">${bet.amount.toLocaleString()}</td>
                   </tr>
                 `).join('')}
               </tbody>
