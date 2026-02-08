@@ -12,26 +12,41 @@ html(lang='en')
         +bootstrap_css()
         link( href='/css/betting.css', rel='stylesheet' )
 body
-  .container
+  .container(style='margin-top: 20px;')
     h1 Betting
     #betting-info
       p Loading...
-    .row
-      .col-md-6
-        h2 Bets
+
+    ul#bettingTabs.nav.nav-tabs(role='tablist')
+      li.active(role='presentation')
+        a(href='#match-bets', aria-controls='match-bets', role='tab', data-toggle='tab') Match Bets
+      li(role='presentation')
+        a(href='#tournament-bets', aria-controls='tournament-bets', role='tab', data-toggle='tab') Tournament Bets
+      li(role='presentation')
+        a(href='#ledger', aria-controls='ledger', role='tab', data-toggle='tab') Ledger
+      li(role='presentation')
+        a(href='#shame', aria-controls='shame', role='tab', data-toggle='tab') Table of Shame
+
+    .tab-content(style='margin-top: 15px;')
+      #match-bets.tab-pane.fade.in.active(role='tabpanel')
+        h2 Current Match
         #betting-totals
           p Loading...
-        h3#team-a-name Team A
-        #team-a-table
-          p Loading...
-        h3#team-b-name Team B
-        #team-b-table
-          p Loading...
+        .row
+          .col-md-6
+            h3#team-a-name Team A
+            #team-a-table
+              p Loading...
+          .col-md-6
+            h3#team-b-name Team B
+            #team-b-table
+              p Loading...
         #draw-bet-section(style='display: none;')
           h3#draw-name Draw
           #draw-table
             p Loading...
-        hr
+
+      #tournament-bets.tab-pane.fade(role='tabpanel')
         h2 Tournament
         #tournament-info
           p Loading...
@@ -39,12 +54,17 @@ body
           p Loading...
         #tournament-choices
           p Loading...
-      .col-md-6
+
+      #ledger.tab-pane.fade(role='tabpanel')
         h2 Ledger
         #ledger-table
           p Loading...
+
+      #shame.tab-pane.fade(role='tabpanel')
         h2 Table of Shame
         #shame-table
           p Loading...
 
+  +jquery()
+  +bootstrap_js()
   script( type='text/javascript', src='/js/betting.js')
