@@ -27,6 +27,15 @@ body
 
     .tab-content(style='margin-top: 15px;')
       #match-bets.tab-pane.fade.in.active(role='tabpanel')
+        .alert.alert-info
+          strong Match Betting: 
+          | Use 
+          code !bet &lt;team&gt; &lt;amount&gt;
+          |  in chat. Example: 
+          code !bet /team/ 500
+          |  or 
+          code !bet /team/ all
+          |.
         h2 Current Match
         #betting-info
           p Loading...
@@ -47,6 +56,15 @@ body
             p Loading...
 
       #tournament-bets.tab-pane.fade(role='tabpanel')
+        .alert.alert-info
+          strong Tournament Betting: 
+          | Use 
+          code !betwinner &lt;choice&gt; &lt;amount&gt;
+          |  in chat. Example: 
+          code !betwinner /choice/ 1000
+          |  or 
+          code !betwinner /choice/ all
+          |.
         h2 Tournament
         #tournament-info
           p Loading...
@@ -56,6 +74,10 @@ body
           p Loading...
 
       #ledger.tab-pane.fade(role='tabpanel')
+        .alert.alert-info
+          | Use 
+          code !bucks
+          |  in chat to check your current balance.
         h2 Ledger
         #ledger-table
           p Loading...
