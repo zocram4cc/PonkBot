@@ -163,6 +163,37 @@ class Betting {
     }
   }
 
+  async loadTournament() {
+    try {
+      const data = await this.db.getKeyValue('betting_tournament');
+      if (data) {
+        this.tournament = JSON.parse(data);
+        if (!this.tournament.bounty) {
+          this.tournament.bounty = 0;
+        }
+        console.info('Tournament betting round loaded.', this.tournament);
+      } else {
+        console.info('No current tournament betting data found in DB.');
+      }
+    } catch (err) {
+      console.error('Error loading tournament betting, starting fresh.', err);
+      this.tournament = {
+        choices: [],
+        bets: [],
+        open: false,
+        bounty: 0,
+      };
+    }
+  }
+
+  async saveTournament() {
+    try {
+      await this.db.setKeyValue('betting_tournament', JSON.stringify(this.tournament, null, 2));
+    } catch (err) {
+      console.error('Error saving tournament.', err);
+    }
+  }
+
   getBalance(user) {
     return this.ledger[user.toLowerCase()] || this.defaultBankroll;
   }
