@@ -14,8 +14,6 @@ html(lang='en')
 body
   .container(style='margin-top: 20px;')
     h1 Betting
-    #betting-info
-      p Loading...
 
     ul#bettingTabs.nav.nav-tabs(role='tablist')
       li.active(role='presentation')
@@ -30,6 +28,8 @@ body
     .tab-content(style='margin-top: 15px;')
       #match-bets.tab-pane.fade.in.active(role='tabpanel')
         h2 Current Match
+        #betting-info
+          p Loading...
         #betting-totals
           p Loading...
         .row
