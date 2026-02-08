@@ -132,53 +132,53 @@ function updateTournamentInfo() {
         infoDiv.innerHTML = '<p>Tournament betting is closed.</p>';
         document.getElementById('tournament-totals').style.display = 'none';
         document.getElementById('tournament-choices').innerHTML = '';
-        return;
-      }
+      } else {
 
-      infoDiv.innerHTML = `<p>Choices: ${tournament.choices.join(', ')}</p>`;
-      
-      const totalsDiv = document.getElementById('tournament-totals');
-      totalsDiv.style.display = 'block';
-      const totalAmount = Object.values(totals).reduce((a, b) => a + b, 0);
-      let totalsHTML = '';
-      tournament.choices.forEach(choice => {
-        totalsHTML += `<p>Total on ${choice}: ${(totals[choice] || 0).toLocaleString()}</p>`;
-      });
-      totalsHTML += `<p><strong>Total Tournament Pool: ${totalAmount.toLocaleString()}</strong></p>`;
-      if (tournament.bounty > 0) {
-        totalsHTML += `<p><strong>Bounty: ${tournament.bounty.toLocaleString()}</strong></p>`;
-      }
-      totalsDiv.innerHTML = totalsHTML;
-
-      const choicesDiv = document.getElementById('tournament-choices');
-      let choicesHTML = '';
-      tournament.choices.forEach(choice => {
-        const choiceBets = tournament.bets.filter(bet => bet.choice.toLowerCase() === choice.toLowerCase());
-        choicesHTML += `<h3>${choice}</h3>`;
-        if (choiceBets.length === 0) {
-          choicesHTML += '<p>No bets placed yet.</p>';
-        } else {
-          choicesHTML += `
-            <table>
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${choiceBets.map(bet => `
-                  <tr>
-                    <td>${bet.user}</td>
-                    <td class="text-end">${bet.amount.toLocaleString()}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          `;
+        infoDiv.innerHTML = `<p>Choices: ${tournament.choices.join(', ')}</p>`;
+        
+        const totalsDiv = document.getElementById('tournament-totals');
+        totalsDiv.style.display = 'block';
+        const totalAmount = Object.values(totals).reduce((a, b) => a + b, 0);
+        let totalsHTML = '';
+        tournament.choices.forEach(choice => {
+          totalsHTML += `<p>Total on ${choice}: ${(totals[choice] || 0).toLocaleString()}</p>`;
+        });
+        totalsHTML += `<p><strong>Total Tournament Pool: ${totalAmount.toLocaleString()}</strong></p>`;
+        if (tournament.bounty > 0) {
+          totalsHTML += `<p><strong>Bounty: ${tournament.bounty.toLocaleString()}</strong></p>`;
         }
-      });
-      choicesDiv.innerHTML = choicesHTML;
+        totalsDiv.innerHTML = totalsHTML;
+
+        const choicesDiv = document.getElementById('tournament-choices');
+        let choicesHTML = '';
+        tournament.choices.forEach(choice => {
+          const choiceBets = tournament.bets.filter(bet => bet.choice.toLowerCase() === choice.toLowerCase());
+          choicesHTML += `<h3>${choice}</h3>`;
+          if (choiceBets.length === 0) {
+            choicesHTML += '<p>No bets placed yet.</p>';
+          } else {
+            choicesHTML += `
+              <table>
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${choiceBets.map(bet => `
+                    <tr>
+                      <td>${bet.user}</td>
+                      <td class="text-end">${bet.amount.toLocaleString()}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            `;
+          }
+        });
+        choicesDiv.innerHTML = choicesHTML;
+      }
     });
 }
 
