@@ -16,9 +16,16 @@ class Betting {
       open: false,
       bounty: 0,
     };
+    this.tournament = {
+      choices: [],
+      bets: [],
+      open: false,
+      bounty: 0,
+    };
 
     this.loadLedger();
     this.loadCurrentRound();
+    this.loadTournament();
     this.loadAllowDraw();
 
     // Set up the hourly economic decay
@@ -198,6 +205,131 @@ class Betting {
     }
     this.ponk.sendMessage(message);
     return this.currentRound;
+  }
+
+  async startTournament(choices) {
+    if (choices.length !== 8) {
+        return { success: false, message: 'Tournament must have exactly 8 choices.' };
+    }
+    this.tournament = {
+      choices: choices,
+      bets: [],
+      open: true,
+      bounty: this.tournament.bounty || 0,
+    };
+    await this.saveTournament();
+    let message = `Tournament betting is open! Choices: ${choices.join(', ')}. Use !betwinner <choice> <amount> to place your bet.`;
+    if (this.tournament.bounty > 0) {
+      message += ` The pot starts with a bounty of ${this.tournament.bounty.toLocaleString()}!`;
+    }
+    this.ponk.sendMessage(message);
+    return { success: true, tournament: this.tournament };
+  }
+
+  async closeTournamentBetting() {
+    if (!this.tournament.open) {
+      return { success: false, message: 'Tournament betting is already closed.' };
+    }
+    this.tournament.open = false;
+    await this.saveTournament();
+    this.ponk.sendMessage('Tournament betting is now closed!');
+    return { success: true, message: 'Tournament betting closed.' };
+  }
+
+  async placeTournamentBet(user, choice, amount) {
+    const lowerUser = user.toLowerCase();
+    if (!this.tournament.open) {
+      return { success: false, message: 'Tournament betting is closed.' };
+    }
+    if (!this.tournament.choices.some(c => c.toLowerCase() === choice.toLowerCase())) {
+        return { success: false, message: 'Invalid choice.' };
+    }
+    
+    let currentBalance = this.getBalance(lowerUser);
+    let maxBet;
+    if (currentBalance > 0) {
+        maxBet = Math.max(1, Math.floor(currentBalance * this.config.betCapPercentage));
+        if (maxBet < amount) {
+          amount = maxBet
+          this.ponk.sendPrivate(`Your bet is too high! You can only bet up to ${this.config.betCapPercentage * 100}% of your bankroll. Your bet has been capped at $${amount.toLocaleString()}.`, user);
+        }
+    } else {
+        if (this.config.debtBetCap < amount) {
+          amount = this.config.debtBetCap
+          this.ponk.sendPrivate(`You broke nigga, I can only lend you $${this.config.debtBetCap.toLocaleString()}. Your bet has been capped at $${amount.toLocaleString()}.`, user);
+        }
+    }
+
+    this.updateBalance(lowerUser, -amount);
+
+    const existingBet = this.tournament.bets.find(bet => bet.user.toLowerCase() === lowerUser && bet.choice.toLowerCase() === choice.toLowerCase());
+    if (existingBet) {
+        existingBet.amount += amount;
+    } else {
+        this.tournament.bets.push({ user, choice, amount: amount });
+    }
+    
+    await this.saveTournament();
+    return { success: true, message: `Tournament bet placed on ${choice} for ${amount.toLocaleString()} by ${user}.` };
+  }
+
+  async resolveTournament(winner) {
+    if (!this.tournament.choices || this.tournament.choices.length === 0) {
+        return { success: false, message: 'No active tournament to resolve.' };
+    }
+    if (this.tournament.open) {
+        this.closeTournamentBetting();
+    }
+    
+    const winningChoice = winner.toLowerCase();
+    const winningBets = this.tournament.bets.filter(bet => bet.choice.toLowerCase() === winningChoice);
+    const losingBets = this.tournament.bets.filter(bet => bet.choice.toLowerCase() !== winningChoice);
+
+    const totalWinningPool = winningBets.reduce((sum, bet) => sum + bet.amount, 0);
+    const totalLosingPool = losingBets.reduce((sum, bet) => sum + bet.amount, 0);
+    const bounty = this.tournament.bounty || 0;
+
+    if (winningBets.length === 0) {
+        this.tournament.bounty = bounty + totalLosingPool;
+        this.ponk.sendMessage(`Nobody picked the winner! The pot of ${totalLosingPool.toLocaleString()} rolls over to the next tournament. The new bounty is ${this.tournament.bounty.toLocaleString()}.`);
+    } else {
+        const winners = [];
+        winningBets.forEach(bet => {
+            const proportion = bet.amount / totalWinningPool;
+            const winnings = bet.amount + ((totalLosingPool + bounty) * proportion);
+            this.updateBalance(bet.user, winnings);
+            winners.push({ user: bet.user, winnings: Math.round(winnings) });
+        });
+        winners.sort((a, b) => b.winnings - a.winnings);
+        const topWinners = winners.slice(0, 3).map(winner => `${winner.user} (${winner.winnings.toLocaleString()})`).join(', ');
+        this.ponk.sendMessage(`The tournament winner is ${winner}! Top winners: ${topWinners}.`);
+        this.tournament.bounty = 0;
+    }
+
+    this.tournament = { choices: [], bets: [], open: false, bounty: this.tournament.bounty };
+    await this.saveTournament();
+    this.saveLedger();
+    this.applyEconomicDecay();
+    return { success: true, message: `Tournament winner declared: ${winner}.` };
+  }
+
+  getTournamentBets() {
+    const totals = {};
+    this.tournament.choices.forEach(choice => {
+        totals[choice] = this.tournament.bets
+            .filter(bet => bet.choice.toLowerCase() === choice.toLowerCase())
+            .reduce((sum, bet) => sum + bet.amount, 0);
+    });
+
+    return {
+        tournament: {
+            choices: this.tournament.choices,
+            bets: this.tournament.bets,
+            open: this.tournament.open,
+            bounty: this.tournament.bounty
+        },
+        totals
+    };
   }
 
   async closeBetting() {
@@ -477,6 +609,55 @@ module.exports = {
                 return this.sendPrivate('You must specify a winner.', user);
             }
             const result = this.betting.resolveRound(winner);
+            this.sendMessage(result.message);
+        }).catch((err) => {
+            this.sendPrivate(err, user);
+        });
+    }.bind(ponk);
+    ponk.commands.handlers.betwinner = function(user, params, { command, message, rank }) {
+        const [choice, amountStr] = params.split(' ');
+        let amount;
+        try {
+            if (amountStr.toLowerCase() === 'all') {
+                amount = ponk.betting.getBalance(user);
+            } else {
+                amount = parseInt(amountStr, 10);
+            }
+            if (!choice || isNaN(amount) || amount <= 0 || amount >= Number.MAX_SAFE_INTEGER) {
+                return ponk.sendPrivate('Usage: !betwinner <choice> <amount>', user);
+            }
+        } catch (err) {
+            return ponk.sendPrivate('Invalid bet amount. Please enter a whole number.', user);
+        }
+        const result = ponk.betting.placeTournamentBet(user, choice, amount);
+        ponk.sendPrivate(result.message, user);
+    }.bind(ponk);
+    ponk.commands.handlers.forcewinnerstart = function(user, params, { command, message, rank }) {
+        this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
+            const choices = params.split(' ');
+            if (choices.length !== 8) {
+                return this.sendMessage('Usage: !forcewinnerstart <choice1> <choice2> ... <choice8>');
+            }
+            this.betting.startTournament(choices);
+        }).catch((err) => {
+            this.sendPrivate(err, user);
+        });
+    }.bind(ponk);
+    ponk.commands.handlers.forcewinnerclose = function(user, params, { command, message, rank }) {
+        this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
+            const result = this.betting.closeTournamentBetting();
+            this.sendMessage(result.message);
+        }).catch((err) => {
+            this.sendPrivate(err, user);
+        });
+    }.bind(ponk);
+    ponk.commands.handlers.forcewinnerend = function(user, params, { command, message, rank }) {
+        this.checkPermission({ user, hybrid: 'betadmin' }).then(() => {
+            const winner = params.split(' ')[0];
+            if (!winner) {
+                return this.sendPrivate('You must specify a winner.', user);
+            }
+            const result = this.betting.resolveTournament(winner);
             this.sendMessage(result.message);
         }).catch((err) => {
             this.sendPrivate(err, user);

@@ -37,5 +37,32 @@ module.exports = (ponk) => {
     res.json(ponk.betting.getCurrentBets());
   });
 
+  router.post('/tournament/start', (req, res) => {
+    const { choices } = req.body;
+    if (!choices || !Array.isArray(choices)) {
+      return res.status(400).json({ success: false, message: 'Missing choices array' });
+    }
+    const result = ponk.betting.startTournament(choices);
+    res.json(result);
+  });
+
+  router.post('/tournament/close', (req, res) => {
+    const result = ponk.betting.closeTournamentBetting();
+    res.json(result);
+  });
+
+  router.post('/tournament/result', (req, res) => {
+    const { winner } = req.body;
+    if (!winner) {
+      return res.status(400).json({ success: false, message: 'Missing winner' });
+    }
+    const result = ponk.betting.resolveTournament(winner);
+    res.json(result);
+  });
+
+  router.get('/tournament', (req, res) => {
+    res.json(ponk.betting.getTournamentBets());
+  });
+
   return router;
 };
