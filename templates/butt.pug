@@ -1,0 +1,22 @@
+doctype html
+html(lang='en')
+    include mixins
+
+    head
+        title Betting
+
+        meta( charset='utf-8' )
+        meta( name='viewport', content='width=device-width, initial-scale=1.0' )
+
+        +favicon()
+        +bootstrap_css()
+        link( href='/css/betting.css', rel='stylesheet' )
+body
+  .container(style='margin-top: 20px;')
+    h1 Butt
+    #butt-table
+      p Loading...
+  
+  +jquery()
+  +bootstrap_js()
+  script( type='text/javascript', src='/js/butt.js')
