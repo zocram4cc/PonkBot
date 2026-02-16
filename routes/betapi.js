@@ -33,6 +33,10 @@ module.exports = (ponk) => {
     res.json(ponk.betting.getLedger());
   });
 
+  router.get('/butt-ledger', (req, res) => {
+    res.json(ponk.butt.getLedger());
+  });
+
   router.get('/bets', (req, res) => {
     res.json(ponk.betting.getCurrentBets());
   });
