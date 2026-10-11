@@ -53,7 +53,11 @@ function firstBigram(words) {
     return words.length === 1 ? START + ' ' + words[0] : words[0] + ' ' + words[1];
 }
 
-// Yields [chain key, next word] pairs, terminated by STOP.
+// Yields [key, next word] pairs. Bigram keys use the full "w1 w2" context;
+// single-word keys carry the same trailing transition as an order-1 backoff,
+// marked with '\u0001' so the walk can fall back when the bigram is missing.
+const UNIGRAM_MARK = '\u0001';
+
 function* transitions(words) {
     if (words.length === 1) {
         yield [START + ' ' + words[0], STOP];
@@ -63,6 +67,7 @@ function* transitions(words) {
         const key = words[i] + ' ' + words[i + 1];
         const next = i + 2 < words.length ? words[i + 2] : STOP;
         yield [key, next];
+        yield [UNIGRAM_MARK + words[i + 1], next];
     }
 }
 
@@ -72,6 +77,6 @@ function stripSentinels(text) {
 }
 
 module.exports = {
-    CHAIN_LENGTH, STOP, START, TEAM_TOKEN,
+    CHAIN_LENGTH, STOP, START, UNIGRAM_MARK, TEAM_TOKEN,
     cleanMessage, tokenize, isTrainable, firstBigram, transitions, stripSentinels
 };

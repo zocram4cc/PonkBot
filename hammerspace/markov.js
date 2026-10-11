@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { CHAIN_LENGTH, STOP, START, tokenize, isTrainable, firstBigram, transitions, stripSentinels } = require('./markov-brain.js');
+const { CHAIN_LENGTH, STOP, START, UNIGRAM_MARK, tokenize, isTrainable, firstBigram, transitions, stripSentinels } = require('./markov-brain.js');
 
 module.exports = {
     name: 'markov',
@@ -66,7 +66,11 @@ module.exports = {
         async function generate(seedWords) {
             const out = seedWords.slice();
             for (let words = 0; words < MAX_WORDS; words++) {
-                const counts = await getChain(out.slice(-CHAIN_LENGTH).join(' '));
+                const bigram = out.slice(-CHAIN_LENGTH).join(' ');
+                // Bigram first, order-1 backoff: chat is sparse, most novel
+                // bigrams have no row at all and would end the walk instantly.
+                const counts = (await getChain(bigram)) ||
+                    (await getChain(UNIGRAM_MARK + out.at(-1)));
                 if (!counts) break;
                 const next = pickWeighted(counts);
                 if (next === STOP) break;
