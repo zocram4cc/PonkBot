@@ -135,21 +135,23 @@ module.exports = {
                     if (!ready) {
                         return this.sendMessage('[Markov] Brain not built yet.');
                     }
-                    if (Date.now() - lastCommandTime < COMMAND_COOLDOWN) return;
-                    lastCommandTime = Date.now();
+                    this.checkPermission({ user, rank: 3 }).then(async () => {
+                        if (Date.now() - lastCommandTime < COMMAND_COOLDOWN) return;
+                        lastCommandTime = Date.now();
 
-                    const words = tokenize(params);
-                    const seed = isTrainable(words) ? await seedFrom(words) : await randomStart();
-                    if (!seed) {
-                        return this.sendMessage('[Markov] Nothing to walk from.');
-                    }
-                    this.sendMessage(await generate(seed));
+                        const words = tokenize(params);
+                        const seed = isTrainable(words) ? await seedFrom(words) : await randomStart();
+                        if (!seed) {
+                            return this.sendMessage('[Markov] Nothing to walk from.');
+                        }
+                        this.sendMessage(await generate(seed));
+                    }).catch((error) => this.sendPrivate(error, user));
                 }
             },
             helpdata: {
                 markov: {
                     synop: 'Says something Markov-generated from the chat history. ' +
-                        'Optional words steer the seed.'
+                        'Admins only; optional words steer the seed.'
                 }
             }
         });
