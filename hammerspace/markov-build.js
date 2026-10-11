@@ -21,6 +21,8 @@ const SELECT_CHUNK = 400;
 
 let db; // assigned in main(); closed over by dbRun/dbAll/flush
 
+const finalize = (statement) => new Promise((resolve) => statement.finalize(resolve));
+
 const args = [];
 const flags = {};
 for (const arg of process.argv.slice(2)) {
@@ -61,8 +63,13 @@ const dbAll = (sql, params = []) => new Promise((resolve, reject) => {
 });
 
 async function flush(chains, starts) {
-    await dbRun('BEGIN IMMEDIATE');
+    const upsert = db.prepare(
+        'INSERT INTO markov (chain, nexts) VALUES (?, ?) ' +
+        'ON CONFLICT(chain) DO UPDATE SET nexts = excluded.nexts'
+    );
+    const insertStart = db.prepare('INSERT OR IGNORE INTO starts (bigram) VALUES (?)');
     try {
+        await dbRun('BEGIN IMMEDIATE');
         // Merge with rows already in the table so cross-batch keys keep counts.
         const keys = [...chains.keys()];
         for (let i = 0; i < keys.length; i += SELECT_CHUNK) {
@@ -78,17 +85,12 @@ async function flush(chains, starts) {
                 }
             }
         }
-        const upsert = db.prepare(
-            'INSERT INTO markov (chain, nexts) VALUES (?, ?) ' +
-            'ON CONFLICT(chain) DO UPDATE SET nexts = excluded.nexts'
-        );
         for (const [chain, bag] of chains) {
             await new Promise((resolve, reject) => {
                 upsert.run(chain, JSON.stringify(Object.fromEntries(bag)),
                     (err) => err ? reject(err) : resolve());
             });
         }
-        const insertStart = db.prepare('INSERT OR IGNORE INTO starts (bigram) VALUES (?)');
         for (const bigram of starts.keys()) {
             await new Promise((resolve, reject) => {
                 insertStart.run(bigram, (err) => err ? reject(err) : resolve());
@@ -98,6 +100,10 @@ async function flush(chains, starts) {
     } catch (err) {
         await dbRun('ROLLBACK');
         throw err;
+    } finally {
+        // sqlite3 legacy driver: unfinalized statements block db.close()
+        finalize(upsert);
+        finalize(insertStart);
     }
     chains.clear();
     starts.clear();
