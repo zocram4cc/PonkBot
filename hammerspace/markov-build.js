@@ -19,6 +19,8 @@ const { tokenize, isTrainable, firstBigram, transitions } = require('./markov-br
 const BATCH_LINES = 50000; // ponytail: ~0.5s write txn so readers only wait briefly; raise when 2GB+ RAM
 const SELECT_CHUNK = 400;
 
+let db; // assigned in main(); closed over by dbRun/dbAll/flush
+
 const args = [];
 const flags = {};
 for (const arg of process.argv.slice(2)) {
@@ -102,7 +104,7 @@ async function flush(chains, starts) {
 }
 
 async function main() {
-    const db = new sqlite3.Database(dbPath);
+    db = new sqlite3.Database(dbPath);
     await dbRun('PRAGMA busy_timeout = 30000');
     // Any run writes into an existing ponkbot.db: snapshot it first (safe even
     // while the bot is live, unlike a raw file copy under WAL).
