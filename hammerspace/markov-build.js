@@ -115,14 +115,15 @@ async function main() {
     db = new sqlite3.Database(dbPath);
     await dbRun('PRAGMA busy_timeout = 30000');
     // Any run writes into an existing ponkbot.db: snapshot it first (safe even
-    // while the bot is live, unlike a raw file copy under WAL).
+    // while the bot is live). VACUUM INTO, not the sqlite3 driver's backup():
+    // that one writes a 0-byte file and reports success on this platform.
     const backupPath = `${dbPath}.bak-${new Date().toISOString().replace(/[:.]/g, '-')}`;
-    if (typeof db.backup === 'function') {
-        await new Promise((resolve, reject) => db.backup(backupPath, (err) => err ? reject(err) : resolve()));
-    } else if (fs.existsSync(dbPath)) {
-        fs.copyFileSync(dbPath, backupPath);
+    if (fs.existsSync(dbPath)) {
+        await dbRun(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`);
+        const size = fs.statSync(backupPath).size;
+        if (!size) throw new Error(`Backup ${backupPath} came out empty; aborting.`);
+        console.log(`Backed up ${dbPath} to ${backupPath} (${(size / 1048576).toFixed(1)}MB)`);
     }
-    console.log(`Backed up ${dbPath} to ${backupPath}`);
     await dbRun('PRAGMA journal_mode = WAL');
     await dbRun('CREATE TABLE IF NOT EXISTS markov (chain TEXT PRIMARY KEY, nexts TEXT NOT NULL)');
     await dbRun('CREATE TABLE IF NOT EXISTS starts (id INTEGER PRIMARY KEY, bigram TEXT NOT NULL UNIQUE)');
