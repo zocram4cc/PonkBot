@@ -13,7 +13,7 @@
 
 'use strict';
 
-const { CHAIN_LENGTH, STOP, tokenize, isTrainable, firstBigram, transitions, stripSentinels } = require('./markov-brain.js');
+const { CHAIN_LENGTH, STOP, START, tokenize, isTrainable, firstBigram, transitions, stripSentinels } = require('./markov-brain.js');
 
 module.exports = {
     name: 'markov',
@@ -68,6 +68,10 @@ module.exports = {
         }
 
         async function seedFrom(words) {
+            if (words.length === 1) {
+                const solo = START + ' ' + words[0]; // lone team tag like /mlp/
+                if (await getChain(solo)) return solo.split(' ');
+            }
             for (let tries = Math.min(5, words.length - 1); tries > 0; tries--) {
                 const idx = Math.floor(Math.random() * (words.length - 1));
                 const key = words[idx] + ' ' + words[idx + 1];
@@ -127,7 +131,7 @@ module.exports = {
 
         ponk.registerCommands({
             handlers: {
-                markov: async (user, params) => {
+                markov: async function (user, params) {
                     if (!ready) {
                         return this.sendMessage('[Markov] Brain not built yet.');
                     }

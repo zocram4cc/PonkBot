@@ -39,7 +39,9 @@ try {
     const config = require(path.join(process.cwd(), 'config.js'));
     peers = config.peers || [];
     if (config.commands && config.commands.trigger) trigger = config.commands.trigger;
+    // The bot name lives at sync.user, mirroring ponk.bots at runtime.
     if (config.user) peers.push(config.user);
+    if (config.sync && config.sync.user) peers.push(config.sync.user);
 } catch (e) {
     console.warn('No readable config.js; skipping default bot filter.');
 }
