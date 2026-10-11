@@ -24,6 +24,24 @@ module.exports = {
         const COOLDOWN = 90 * 1000;
         const COMMAND_COOLDOWN = 5 * 1000;
         const MAX_WORDS = 40;
+        const MIN_WORDS = 6; // chains dead-end often; retry until worth reading
+        const MAX_ATTEMPTS = 4;
+
+        const countWords = (text) => text ? text.split(' ').filter(Boolean).length : 0;
+
+        // Walks from sparse order-2 chains die fast; try a few seeds and
+        // keep the best reply instead of shipping the first 2-word corpse.
+        async function replyFrom(words) {
+            let best = '';
+            for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
+                const seed = await seedFrom(words);
+                if (!seed) break;
+                const reply = await generate(seed);
+                if (countWords(reply) > countWords(best)) best = reply;
+                if (countWords(reply) >= MIN_WORDS) return reply;
+            }
+            return best;
+        }
 
         let ready = false;
         let maxStartId = 0;
@@ -120,9 +138,7 @@ module.exports = {
             const actualUsers = ponk.userlist.length || 1;
             if (Math.random() >= BASE_PROBABILITY * (TARGET_USERS / actualUsers)) return;
 
-            const seed = await seedFrom(words);
-            if (!seed) return;
-            const reply = await generate(seed);
+            const reply = await replyFrom(words);
             if (!reply.trim()) return;
 
             lastReplyTime = Date.now();
@@ -140,11 +156,11 @@ module.exports = {
                         lastCommandTime = Date.now();
 
                         const words = tokenize(params);
-                        const seed = isTrainable(words) ? await seedFrom(words) : await randomStart();
-                        if (!seed) {
+                        const reply = await replyFrom(words);
+                        if (!reply.trim()) {
                             return this.sendMessage('[Markov] Nothing to walk from.');
                         }
-                        this.sendMessage(await generate(seed));
+                        this.sendMessage(reply);
                     }).catch((error) => this.sendPrivate(error, user));
                 }
             },
