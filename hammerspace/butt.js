@@ -29,7 +29,13 @@ module.exports = {
           } else if (words[randomIndex].toLocaleUpperCase() == words[randomIndex]) {
             buttWord = 'BUTT';
           }
-          words[randomIndex] = buttWord;
+          // separate word from some kinds of punctuation after a word and cleanly concat back together after word replacement
+          chosenWord = words[randomIndex].split(/(\w+)([,\.!\?\(\):]+)/ugi);
+          if (chosenWord.length > 1) {
+            words[randomIndex] = buttWord.concat(chosenWord[2]);
+          } else {
+            words[randomIndex] = buttWord;
+          }
           ponk.sendMessage(ponk.filterChat(words.join(' ')));
           lastButtMessageTime = Date.now(); // Reset cooldown
         }
