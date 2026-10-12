@@ -23,7 +23,13 @@ module.exports = {
         const words = cleanMessage.split(' ');
         if (words.length > 1) {
           const randomIndex = Math.floor(Math.random() * words.length);
-          words[randomIndex] = 'butt';
+          let buttWord = 'butt';
+          if (words[randomIndex].startsWith(':') && words[randomIndex].endsWith(':')) {
+            buttWord = ':gutsman:';
+          } else if (words[randomIndex].toLocaleUpperCase() == words[randomIndex]) {
+            buttWord = 'BUTT';
+          }
+          words[randomIndex] = buttWord;
           ponk.sendMessage(ponk.filterChat(words.join(' ')));
           lastButtMessageTime = Date.now(); // Reset cooldown
         }
