@@ -23,15 +23,17 @@ module.exports = {
         const words = cleanMessage.split(' ');
         if (words.length > 1) {
           const randomIndex = Math.floor(Math.random() * words.length);
-          let buttWord = 'butt';
-          if (words[randomIndex].startsWith(':') && words[randomIndex].endsWith(':')) {
-            buttWord = ':gutsman:';
-          } else if (words[randomIndex].toLocaleUpperCase() == words[randomIndex]) {
+	  const targetWord = words[randomIndex];
+          if (targetWord.startsWith(':') && targetWord.endsWith(':')) {
+	    buttWord = ':gutsman:';
+          } else if (targetWord.toLocaleUpperCase() === targetWord) {
             buttWord = 'BUTT';
+          } else {
+	    buttWord = 'butt';
           }
           // separate word from some kinds of punctuation after a word and cleanly concat back together after word replacement
-          chosenWord = words[randomIndex].split(/(\w+)([,\.!\?\(\):]+)/ugi);
-          if (chosenWord.length > 1) {
+          chosenWord = targetWord.split(/(\w+)([,\.!\?\(\):]+)/ugi);
+          if (chosenWord.length > 1 && chosenWord[2]) {
             words[randomIndex] = buttWord.concat(chosenWord[2]);
           } else {
             words[randomIndex] = buttWord;
